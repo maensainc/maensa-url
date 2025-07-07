@@ -80,11 +80,11 @@ function finalizarRegistro() {
   }
 
   const datos = {
-    nombre: document.getElementById('nombre').value.trim(),
-    apellido: document.getElementById('apellido').value.trim(),
-    email: document.getElementById('email').value.trim(),
-    telefono: document.getElementById('telefono').value.trim(),
-    nacimiento: document.getElementById('fecha_nacimiento').value.trim(),
+    nombre: document.getElementById('nombre').value,
+    apellido: document.getElementById('apellido').value,
+    email: document.getElementById('email').value,
+    telefono: document.getElementById('telefono').value,
+    nacimiento: document.getElementById('fecha_nacimiento').value,
     plan: plan.value
   };
 
@@ -95,17 +95,14 @@ function finalizarRegistro() {
   })
   .then(res => res.json())
   .then(data => {
-    if (data.status === "free") {
-      alert("¡Registro gratuito exitoso!");
-      cerrarModalRegistro();
-    } else if (data.init_point) {
+    if (data.init_point) {
       window.location.href = data.init_point;
     } else if (data.error) {
-      alert("Error: " + data.error);
+      alert(data.error);
     }
   })
   .catch(err => {
     console.error(err);
-    alert("Error al registrar o generar pago");
+    alert("Error al generar pago");
   });
 }
