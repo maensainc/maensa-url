@@ -240,3 +240,36 @@ document.addEventListener("DOMContentLoaded", () => {
   // Estado inicial botón reenvío
   updateResendButton();
 });
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Selecciono todos los botones de contratar
+  document.querySelectorAll(".plan-card .btn-contratar")
+    .forEach(btn => btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+
+      // 1) Averiguo el plan desde el data-plan de la tarjeta
+      const plan = btn.closest(".plan-card").dataset.plan;
+      if (!plan) return console.error("No encontré el atributo data-plan");
+
+      try {
+        // 2) Llamo al endpoint que inicia la compra en MercadoPago
+        const res = await fetch(`${API_BASE}/api/registro-plan`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan })
+        });
+        const data = await res.json();
+
+        // 3) Si todo salió bien, redirijo al init_point de MercadoPago
+        if (data.init_point) {
+          window.location.href = data.init_point;
+        } else {
+          alert(data.error || "No se pudo iniciar el pago.");
+        }
+      } catch (err) {
+        console.error("Error iniciando pago:", err);
+        alert("Error de conexión al iniciar el pago.");
+      }
+    }));
+});
