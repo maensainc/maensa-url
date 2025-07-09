@@ -1138,3 +1138,13 @@ html {
   background-color: #e0264b;
 }
 
+.cuenta-datos .dato-item {
+  display: flex;
+  align-items: center;
+}
+
+
+.cuenta-datos .vencimiento-item {
+  justify-content: flex-end;
+}
+

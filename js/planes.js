@@ -243,25 +243,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Selecciono todos los botones de contratar
   document.querySelectorAll(".plan-card .btn-contratar")
-    .forEach(btn => btn.addEventListener("click", async (e) => {
+    .forEach(btn => btn.addEventListener("click", async e => {
       e.preventDefault();
+      const card = btn.closest(".plan-card");
+      const plan = card?.dataset.plan;
+      if (!plan) return console.error("No hay data-plan");
 
-      // 1) Averiguo el plan desde el data-plan de la tarjeta
-      const plan = btn.closest(".plan-card").dataset.plan;
-      if (!plan) return console.error("No encontré el atributo data-plan");
+      // ————— Plan Gratis —————
+      if (plan === "gratis") {
+        // Aviso al usuario
+        alert(
+          "¡Plan Gratis activado!\n\n" +
+          "Tienes 1 día de prueba y hasta 20 archivos de carga.\n" +
+          "Cuando expire o uses las 20 cargas, volverás al plan gratuito deshabilitado."
+        );
 
+        // Guardar en localStorage
+        const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+        usuario.plan = "gratis";
+        usuario.trial = {
+          expiresAt: Date.now() + 24 * 60 * 60 * 1000,  // +1 día
+          limit: 20,
+          used: 0
+        };
+        localStorage.setItem("usuario", JSON.stringify(usuario));
+
+        // Opcional: redirigir a alguna página de confirmación
+        return;
+      }
+
+      // ————— Planes de pago —————
       try {
-        // 2) Llamo al endpoint que inicia la compra en MercadoPago
-        const res = await fetch(`${API_BASE}/api/registro-plan`, {
+        const res  = await fetch(`${API_BASE}/api/registro-plan`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ plan })
         });
         const data = await res.json();
-
-        // 3) Si todo salió bien, redirijo al init_point de MercadoPago
         if (data.init_point) {
           window.location.href = data.init_point;
         } else {

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Subir Recibos</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header><h1>Subir Recibos</h1></header>
+
+  <main>
+    <section id="upload-section">
+      <input type="file" id="file-input" multiple accept="image/*,application/pdf" />
+      <div id="previews"></div>
+      <button id="btn-process" disabled>Procesar recibos</button>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = "https://maensa.onrender.com";
+    const input = document.getElementById("file-input");
+    const previews = document.getElementById("previews");
+    const btn = document.getElementById("btn-process");
+    let files = [];
+
+    input.addEventListener("change", () => {
+      previews.innerHTML = "";
+      files = Array.from(input.files);
+      files.forEach(f => {
+        const div = document.createElement("div");
+        div.className = "preview-item";
+        div.textContent = f.name;
+        previews.appendChild(div);
+      });
+      btn.disabled = files.length === 0;
+    });
+
+    btn.addEventListener("click", async () => {
+      if (!files.length) return;
+      const form = new FormData();
+      files.forEach((f,i) => form.append(`file${i}`, f));
+      
+      btn.textContent = "Procesando…";
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE}/api/receipt-parser`, {
+          method: "POST",
+          body: form
+        });
+        const json = await res.json();
+        // guardo resultado en localStorage para la página de resultados
+        localStorage.setItem("receiptResult", JSON.stringify(json));
+        window.location.href = "results.html";
+      } catch (e) {
+        alert("Error al procesar: " + e.message);
+        btn.textContent = "Procesar recibos";
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

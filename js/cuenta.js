@@ -1,3 +1,14 @@
+function mostrarVencimiento(usuario) {
+  const expiresAt = usuario.trial?.expiresAt || usuario.expirationTimestamp;
+  if (!expiresAt) {
+    document.getElementById("vencimiento-valor").textContent = "No aplica";
+    return;
+  }
+  const fecha = new Date(expiresAt);
+  document.getElementById("vencimiento-valor").textContent =
+    fecha.toLocaleDateString() + " " + fecha.toLocaleTimeString();
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   const usuario = JSON.parse(localStorage.getItem("usuario"));
   if (!usuario) {
@@ -10,6 +21,7 @@ window.addEventListener('DOMContentLoaded', () => {
   mostrarMenuUsuario(usuario);
   prepararEdicion();
   actualizarBotonEstado();
+  mostrarVencimiento(usuario);
 });
 
 function mostrarDatos(usuario) {

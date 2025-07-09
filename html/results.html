@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resultados de Receipts</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header><h1>Resultados de Receipts</h1></header>
+  <main>
+    <button id="btn-download">Descargar CSV</button>
+    <table id="results-table">
+      <!-- se genera dinámicamente -->
+    </table>
+  </main>
+
+  <script>
+    // 1) Obtener datos
+    const raw = localStorage.getItem("receiptResult");
+    if (!raw) {
+      alert("No hay resultados para mostrar.");
+      window.location.href = "upload.html";
+    }
+    const data = JSON.parse(raw);
+    // asumo que data es array de objetos: [ { campo1: valor1, campo2: valor2, ... }, ... ]
+
+    // 2) Construir tabla
+    const table = document.getElementById("results-table");
+    const keys = Object.keys(data[0] || {});
+    // thead
+    const thead = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    keys.forEach(k => {
+      const th = document.createElement("th");
+      th.textContent = k;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    // tbody
+    const tbody = document.createElement("tbody");
+    data.forEach((row, i) => {
+      const tr = document.createElement("tr");
+      keys.forEach(k => {
+        const td = document.createElement("td");
+        td.contentEditable = "true";
+        td.textContent = row[k];
+        // al editar, actualizamos el objeto en memoria
+        td.addEventListener("input", () => {
+          data[i][k] = td.textContent;
+        });
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+
+    // 3) Descargar como CSV
+    document.getElementById("btn-download").addEventListener("click", () => {
+      let csv = keys.join(",") + "\n";
+      data.forEach(row => {
+        csv += keys.map(k => `"${(row[k]||"").toString().replace(/"/g,'""')}"`).join(",") + "\n";
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "receipts.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
