@@ -4,60 +4,145 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Subir Recibos</title>
-  <link rel="stylesheet" >
+  <link rel="stylesheet" href="../upload.css">
 </head>
 <body>
+<header class="header">
+  <div class="logo">
+    <a href="Maensa.html">
+      <img src="../fotos/logo.jpg" alt="Logo Maensa" />
+    </a>
+  </div>
+
+  <nav class="inicio_de_sesion">
+    <ul>
+      <li>
+        <a href="#" onclick="mostrarLogin(); return false;">Iniciar sesión</a>
+      </li>
+      <li>
+        <a href="#" onclick="mostrarRegistro(); return false;">Registrarse</a></li>
+
+      <li class="menu-usuario hidden" id="menu-usuario-li">
+        <a
+          href="#"
+          id="btn-usuario"
+          onclick="toggleMenuUsuario(); return false;"
+        >
+          <span class="nombre-usuario"></span>
+          <img
+            src="../fotos/usuario.png"
+            alt="Usuario"
+            class="icono-usuario"
+          />
+        </a>
+        <div class="menu-desplegable">
+          <a href="cuenta.html">Cuenta</a>
+          <a href="planel.html">Planes</a>
+          <a href="upload.html">Subir imágenes</a>
+          <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+</header>
   <header><h1>Subir Recibos</h1></header>
 
-  <main>
+  <main class="main">
     <section id="upload-section">
       <input type="file" id="file-input" multiple accept="image/*,application/pdf" />
       <div id="previews"></div>
       <button id="btn-process" disabled>Procesar recibos</button>
     </section>
   </main>
+<script>
+  const API_BASE = "https://maensa.onrender.com";
 
-  <script>
-    const API_BASE = "https://maensa.onrender.com";
-    const input = document.getElementById("file-input");
-    const previews = document.getElementById("previews");
-    const btn = document.getElementById("btn-process");
-    let files = [];
+  // ————— NAVBAR & SESIÓN —————
+  function loginExitoso(usuario) {
+    document.getElementById("btn-login").style.display    = "none";
+    document.getElementById("btn-register").style.display = "none";
+    const menu = document.getElementById("menu-usuario-li");
+    menu.classList.remove("hidden");
+    document.querySelector(".nombre-usuario").textContent =
+      `${usuario.nombre} ${usuario.apellido}`;
+  }
 
-    input.addEventListener("change", () => {
-      previews.innerHTML = "";
-      files = Array.from(input.files);
-      files.forEach(f => {
-        const div = document.createElement("div");
-        div.className = "preview-item";
-        div.textContent = f.name;
-        previews.appendChild(div);
-      });
-      btn.disabled = files.length === 0;
-    });
+  function mostrarLogin()     { cerrarRegistro(); document.getElementById("modal-login").classList.remove("hidden"); }
+  function cerrarLogin()      { document.getElementById("modal-login").classList.add("hidden"); }
+  function mostrarRegistro()  { cerrarLogin();    document.getElementById("modal-register").classList.remove("hidden"); }
+  function cerrarRegistro()   { document.getElementById("modal-register").classList.add("hidden"); }
 
-    btn.addEventListener("click", async () => {
-      if (!files.length) return;
-      const form = new FormData();
-      files.forEach(f => form.append('files', f));
-      
-      btn.textContent = "Procesando…";
-      btn.disabled = true;
-      try {
-            const res = await fetch('https://maensa.onrender.com/api/receipt-parser', {
-                method: 'POST',
-                body: form
-            });
-        const json = await res.json();
-        // guardo resultado en localStorage para la página de resultados
-        localStorage.setItem("receiptResult", JSON.stringify(json));
-        window.location.href = "results.html";
-      } catch (e) {
-        alert("Error al procesar: " + e.message);
-        btn.textContent = "Procesar recibos";
-        btn.disabled = false;
+  function toggleMenuUsuario() {
+    document.getElementById("menu-usuario-li").classList.toggle("activo");
+  }
+  function cerrarSesion() {
+    localStorage.removeItem("usuario");
+    window.location.href = "Maensa.html";
+  }
+
+  // On load: autologin + bind navbar
+  document.addEventListener("DOMContentLoaded", () => {
+    // Autologin si hay usuario en localStorage
+    const raw = localStorage.getItem("usuario");
+    if (raw) {
+      try { loginExitoso(JSON.parse(raw)); }
+      catch (e) { console.warn("Error parse usuario:", e); }
+    }
+
+    // Bind botones navbar
+    document.getElementById("btn-login")?.addEventListener("click", e => { e.preventDefault(); mostrarLogin(); });
+    document.getElementById("btn-register")?.addEventListener("click", e => { e.preventDefault(); mostrarRegistro(); });
+    document.getElementById("btn-usuario")?.addEventListener("click", e => { e.preventDefault(); toggleMenuUsuario(); });
+    document.getElementById("cerrar-sesion")?.addEventListener("click", e => { e.preventDefault(); cerrarSesion(); });
+
+    // Cerrar menú al click fuera
+    document.addEventListener("click", e => {
+      const menu = document.getElementById("menu-usuario-li");
+      const btn  = document.getElementById("btn-usuario");
+      if (menu && btn && !menu.contains(e.target) && e.target !== btn) {
+        menu.classList.remove("activo");
       }
     });
-  </script>
+  });
+
+  // ————— SUBIDA DE ARCHIVOS —————
+  const input    = document.getElementById("file-input");
+  const previews = document.getElementById("previews");
+  const btn      = document.getElementById("btn-process");
+  let files = [];
+
+  input.addEventListener("change", () => {
+    previews.innerHTML = "";
+    files = Array.from(input.files);
+    files.forEach(f => {
+      const div = document.createElement("div");
+      div.className = "preview-item";
+      div.textContent = f.name;
+      previews.appendChild(div);
+    });
+    btn.disabled = files.length === 0;
+  });
+
+  btn.addEventListener("click", async () => {
+    if (!files.length) return;
+    const form = new FormData();
+    files.forEach(f => form.append('files', f));
+
+    btn.textContent = "Procesando…";
+    btn.disabled    = true;
+
+    try {
+      const res  = await fetch(`${API_BASE}/api/receipt-parser`, { method: 'POST', body: form });
+      const json = await res.json();
+      localStorage.setItem("receiptResult", JSON.stringify(json));
+      window.location.href = "results.html";
+    } catch (e) {
+      alert("Error al procesar: " + e.message);
+      btn.textContent = "Procesar recibos";
+      btn.disabled    = false;
+    }
+  });
+</script>
+
 </body>
 </html>
