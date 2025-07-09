@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Subir Recibos</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" >
 </head>
 <body>
   <header><h1>Subir Recibos</h1></header>
@@ -39,15 +39,15 @@
     btn.addEventListener("click", async () => {
       if (!files.length) return;
       const form = new FormData();
-      files.forEach((f,i) => form.append(`file${i}`, f));
+      files.forEach(f => form.append('files', f));
       
       btn.textContent = "Procesando…";
       btn.disabled = true;
       try {
-        const res = await fetch(`${API_BASE}/api/receipt-parser`, {
-          method: "POST",
-          body: form
-        });
+            const res = await fetch('https://maensa.onrender.com/api/receipt-parser', {
+                method: 'POST',
+                body: form
+            });
         const json = await res.json();
         // guardo resultado en localStorage para la página de resultados
         localStorage.setItem("receiptResult", JSON.stringify(json));

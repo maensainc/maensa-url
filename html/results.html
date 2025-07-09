@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Resultados de Receipts</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="../result.css">
 </head>
 <body>
   <header><h1>Resultados de Receipts</h1></header>
@@ -15,62 +15,87 @@
     </table>
   </main>
 
-  <script>
-    // 1) Obtener datos
-    const raw = localStorage.getItem("receiptResult");
-    if (!raw) {
-      alert("No hay resultados para mostrar.");
-      window.location.href = "upload.html";
-    }
-    const data = JSON.parse(raw);
-    // asumo que data es array de objetos: [ { campo1: valor1, campo2: valor2, ... }, ... ]
+<script>
+  const data = JSON.parse(localStorage.getItem("receiptResult") || "[]");
+  if (!data.length) {
+    alert("No hay datos para mostrar.");
+    window.location.href = "upload.html";
+  }
 
-    // 2) Construir tabla
-    const table = document.getElementById("results-table");
-    const keys = Object.keys(data[0] || {});
-    // thead
-    const thead = document.createElement("thead");
-    const headRow = document.createElement("tr");
-    keys.forEach(k => {
-      const th = document.createElement("th");
-      th.textContent = k;
-      headRow.appendChild(th);
-    });
-    thead.appendChild(headRow);
-    table.appendChild(thead);
+  // 1) Usa una lista blanca de campos
+  const allKeys = [
+    'fileName',
+    'fecha',
+    'hora',
+    'totalBruto',
+    'totalNeto',
+    'impuestos',
+    'moneda',
+    'proveedor',
+    'direccion',
+    'numeroRecibo',
+    'items'
+  ];
 
-    // tbody
-    const tbody = document.createElement("tbody");
-    data.forEach((row, i) => {
-      const tr = document.createElement("tr");
-      keys.forEach(k => {
-        const td = document.createElement("td");
-        td.contentEditable = "true";
-        td.textContent = row[k];
-        // al editar, actualizamos el objeto en memoria
-        td.addEventListener("input", () => {
-          data[i][k] = td.textContent;
-        });
-        tr.appendChild(td);
+  // 2) Construye la tabla (igual que antes)
+  const table = document.getElementById("results-table");
+  table.innerHTML = "";
+
+  // thead
+  const thead = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  allKeys.forEach(key => {
+    const th = document.createElement("th");
+    th.textContent = key;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  // tbody
+  const tbody = document.createElement("tbody");
+  data.forEach((row, rowIndex) => {
+    const tr = document.createElement("tr");
+    allKeys.forEach(key => {
+      const td = document.createElement("td");
+      let val = row[key];
+
+      if (key === 'items' && Array.isArray(val)) {
+        // convierte items a texto legible
+        val = val
+          .map(item => `${item.descripcion} x${item.cantidad||1} @${item.precioUnit||item.precio}`)
+          .join("; ");
+      } else if (typeof val === "object" && val !== null) {
+        val = JSON.stringify(val);
+      }
+
+      td.contentEditable = "true";
+      td.textContent = val != null ? val : "";
+      td.addEventListener("input", () => {
+        row[key] = td.textContent;
       });
-      tbody.appendChild(tr);
+      tr.appendChild(td);
     });
-    table.appendChild(tbody);
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
 
-    // 3) Descargar como CSV
-    document.getElementById("btn-download").addEventListener("click", () => {
-      let csv = keys.join(",") + "\n";
-      data.forEach(row => {
-        csv += keys.map(k => `"${(row[k]||"").toString().replace(/"/g,'""')}"`).join(",") + "\n";
-      });
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "receipts.csv";
-      a.click();
-      URL.revokeObjectURL(url);
+  // 3) Descargar CSV (igual que antes)
+  document.getElementById("btn-download").addEventListener("click", () => {
+    let csv = allKeys.join(",") + "\n";
+    data.forEach(row => {
+      csv += allKeys
+        .map(k => `"${(row[k]||"").toString().replace(/"/g,'""')}"`)
+        .join(",") + "\n";
     });
-  </script>
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "recibos.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+</script>
 </body>
 </html>
