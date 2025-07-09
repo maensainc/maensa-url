@@ -1,17 +1,16 @@
 // planes.js
-
 const API_BASE = "https://maensa.onrender.com";
 
 // ——————————————
 // Funciones de Modal & Sesión
 // ——————————————
-
 function loginExitoso(usuario) {
   document.getElementById("btn-login").style.display    = "none";
   document.getElementById("btn-register").style.display = "none";
   const menu = document.getElementById("menu-usuario-li");
   menu.classList.remove("hidden");
-  document.querySelector(".nombre-usuario").textContent = `${usuario.nombre} ${usuario.apellido}`;
+  document.querySelector(".nombre-usuario").textContent =
+    `${usuario.nombre} ${usuario.apellido}`;
 }
 
 function cerrarModalLogin() {
@@ -21,30 +20,26 @@ function mostrarLogin() {
   cerrarModalRegistro();
   document.getElementById("modal-login").classList.remove("hidden");
 }
-
 function cerrarModalRegistro() {
   document.getElementById("modal-register").classList.add("hidden");
 }
 function mostrarRegistro() {
   cerrarModalLogin();
   document.getElementById("modal-register").classList.remove("hidden");
-  paso1(); // reset pasos
+  paso1();
 }
 
 // ——————————————
 // Helpers de registro
 // ——————————————
-
 let registroData = {};
 let resendCooldown = 0, resendTimer = null;
 
 function actualizarIndicador(paso) {
   for (let i = 1; i <= 3; i++) {
-    document.getElementById(`punto-${i}`)
-      .classList.toggle("activo", i === paso);
+    document.getElementById(`punto-${i}`).classList.toggle("activo", i === paso);
   }
 }
-
 function paso1() {
   document.getElementById("registro-paso-1").classList.remove("hidden");
   document.getElementById("registro-paso-2").classList.add("hidden");
@@ -61,14 +56,13 @@ function paso2() {
 // ——————————————
 // Paso 1: envío de datos
 // ——————————————
-
 async function irAPaso2() {
-  const nombre   = document.getElementById("nombre").value.trim();
-  const apellido = document.getElementById("apellido").value.trim();
-  const email    = document.getElementById("email").value.trim();
-  const telefono = document.getElementById("telefono").value.trim();
+  const nombre     = document.getElementById("nombre").value.trim();
+  const apellido   = document.getElementById("apellido").value.trim();
+  const email      = document.getElementById("email").value.trim();
+  const telefono   = document.getElementById("telefono").value.trim();
   const nacimiento = document.getElementById("fecha_nacimiento").value;
-  const password = document.getElementById("password").value;
+  const password   = document.getElementById("password").value;
 
   if (!/(?=.*[A-Z])(?=.*\d).{8,}/.test(password)) {
     return alert("La contraseña debe tener mínimo 8 caracteres, una mayúscula y un número.");
@@ -78,7 +72,7 @@ async function irAPaso2() {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/api/registro`, {
+    const res  = await fetch(`${API_BASE}/api/registro`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ nombre, apellido, email, telefono, nacimiento, password }),
@@ -99,7 +93,6 @@ async function irAPaso2() {
 // ——————————————
 // Reenviar código
 // ——————————————
-
 function iniciarCooldown() {
   resendCooldown = 30;
   updateResendButton();
@@ -138,7 +131,6 @@ function reenviarCodigo() {
 // ——————————————
 // Paso 2: verificar código
 // ——————————————
-
 async function verificarCodigo() {
   const codigo = document.getElementById("codigo-verificacion").value.trim();
   if (!codigo) return alert("Ingresá el código.");
@@ -155,9 +147,9 @@ async function verificarCodigo() {
     }
 
     cerrarModalRegistro();
-    registroData.plan = "basico";
+    registroData.plan            = "basico";
     registroData.pago_confirmado = 0;
-    registroData.verificado = true;
+    registroData.verificado      = true;
     localStorage.setItem("usuario", JSON.stringify(registroData));
     window.location.href = "planel.html";
   } catch {
@@ -168,7 +160,6 @@ async function verificarCodigo() {
 // ——————————————
 // Login
 // ——————————————
-
 async function iniciarSesion() {
   const email    = document.getElementById("email-login").value.trim();
   const password = document.getElementById("password-login").value.trim();
@@ -199,7 +190,6 @@ async function iniciarSesion() {
 // ——————————————
 // Menú usuario
 // ——————————————
-
 function toggleMenuUsuario() {
   document.getElementById("menu-usuario-li").classList.toggle("activo");
 }
@@ -209,71 +199,32 @@ function cerrarSesion() {
 }
 
 // ——————————————
-// Inicio único
+// Compra de planes
 // ——————————————
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Auto‐login
-  const raw = localStorage.getItem("usuario");
-  if (raw) {
-    try { loginExitoso(JSON.parse(raw)); }
-    catch (e) { console.warn("Parse error usuario:", e); }
-  }
-
-  // Bind botones
-  document.getElementById("btn-login")?.addEventListener("click", e => { e.preventDefault(); mostrarLogin(); });
-  document.getElementById("btn-register")?.addEventListener("click", e => { e.preventDefault(); mostrarRegistro(); });
-  document.getElementById("btn-iniciar-sesion")?.addEventListener("click", e => { e.preventDefault(); iniciarSesion(); });
-  document.getElementById("btn-reenviar-codigo")?.addEventListener("click", e => { e.preventDefault(); reenviarCodigo(); });
-  document.getElementById("btn-usuario")?.addEventListener("click", e => { e.preventDefault(); toggleMenuUsuario(); });
-  document.getElementById("cerrar-sesion")?.addEventListener("click", e => { e.preventDefault(); cerrarSesion(); });
-
-  // Cerrar menú clic fuera
-  document.addEventListener("click", e => {
-    const menu = document.getElementById("menu-usuario-li");
-    const btn  = document.getElementById("btn-usuario");
-    if (menu && btn && !menu.contains(e.target) && e.target !== btn) {
-      menu.classList.remove("activo");
-    }
-  });
-
-  // Estado inicial botón reenvío
-  updateResendButton();
-});
-
-
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".plan-card .btn-contratar")
     .forEach(btn => btn.addEventListener("click", async e => {
       e.preventDefault();
-      const card = btn.closest(".plan-card");
-      const plan = card?.dataset.plan;
+      const plan = btn.closest(".plan-card")?.dataset.plan;
       if (!plan) return console.error("No hay data-plan");
 
-      // ————— Plan Gratis —————
       if (plan === "gratis") {
-        // Aviso al usuario
         alert(
           "¡Plan Gratis activado!\n\n" +
           "Tienes 1 día de prueba y hasta 20 archivos de carga.\n" +
           "Cuando expire o uses las 20 cargas, volverás al plan gratuito deshabilitado."
         );
-
-        // Guardar en localStorage
         const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
         usuario.plan = "gratis";
         usuario.trial = {
-          expiresAt: Date.now() + 24 * 60 * 60 * 1000,  // +1 día
+          expiresAt: Date.now() + 24 * 60 * 60 * 1000,
           limit: 20,
           used: 0
         };
         localStorage.setItem("usuario", JSON.stringify(usuario));
-
-        // Opcional: redirigir a alguna página de confirmación
         return;
       }
 
-      // ————— Planes de pago —————
       try {
         const res  = await fetch(`${API_BASE}/api/registro-plan`, {
           method: "POST",
@@ -291,4 +242,110 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("Error de conexión al iniciar el pago.");
       }
     }));
+});
+
+// ——————————————
+// Renderizado de tabla de “Resultados de Receipts”
+// ——————————————
+document.addEventListener("DOMContentLoaded", () => {
+  const data = JSON.parse(localStorage.getItem("receiptResult") || "[]");
+  if (!data.length) {
+    alert("No hay datos para mostrar.");
+    return window.location.href = "upload.html";
+  }
+
+  // Definimos columnas: key = propiedad del objeto, label = encabezado
+  const columns = [
+    { key: 'fileName',        label: 'Archivo' },
+    { key: 'tipo',            label: 'Tipo' },
+    { key: 'fecha',           label: 'Fecha' },
+    { key: 'hora',            label: 'Hora' },
+    { key: 'total',           label: 'Total' },
+    { key: 'de',              label: 'De quien sale' },
+    { key: 'para',            label: 'A quien llega' },
+    { key: 'motivo',          label: 'Motivo' },
+    { key: 'medioPago',       label: 'Medio de Pago' },
+    { key: 'numeroOperacion', label: 'Nº de Operación' },
+    { key: 'items',           label: 'Items' },
+  ];
+
+  const table = document.getElementById("results-table");
+  table.innerHTML = "";
+
+  // Construir <thead>
+  const thead   = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  columns.forEach(col => {
+    const th = document.createElement("th");
+    th.textContent = col.label;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+
+  // Construir <tbody>
+  const tbody = document.createElement("tbody");
+  data.forEach(row => {
+    const tr = document.createElement("tr");
+    columns.forEach(col => {
+      const td = document.createElement("td");
+      let val = row[col.key];
+      if (col.key === 'items' && Array.isArray(val)) {
+        val = val.join("; ");
+      }
+      td.contentEditable = "true";
+      td.textContent     = val != null ? val : "";
+      td.addEventListener("input", () => row[col.key] = td.textContent);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+
+  // Botón CSV
+  document.getElementById("btn-download").addEventListener("click", () => {
+    let csv = columns.map(c => c.label).join(",") + "\n";
+    data.forEach(row => {
+      csv += columns
+        .map(c => `"${(row[c.key]||"").toString().replace(/"/g,'""')}"`)
+        .join(",") + "\n";
+    });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = "recibos.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+});
+
+// ——————————————
+// Carga inicial común
+// ——————————————
+document.addEventListener("DOMContentLoaded", () => {
+  const raw = localStorage.getItem("usuario");
+  if (raw) {
+    try { loginExitoso(JSON.parse(raw)); }
+    catch (e) { console.warn("Parse error usuario:", e); }
+  }
+
+  // Bind botones de sesión y registro
+  document.getElementById("btn-login")?.addEventListener("click", e => { e.preventDefault(); mostrarLogin(); });
+  document.getElementById("btn-register")?.addEventListener("click", e => { e.preventDefault(); mostrarRegistro(); });
+  document.getElementById("btn-iniciar-sesion")?.addEventListener("click", e => { e.preventDefault(); iniciarSesion(); });
+  document.getElementById("btn-reenviar-codigo")?.addEventListener("click", e => { e.preventDefault(); reenviarCodigo(); });
+  document.getElementById("btn-usuario")?.addEventListener("click", e => { e.preventDefault(); toggleMenuUsuario(); });
+  document.getElementById("cerrar-sesion")?.addEventListener("click", e => { e.preventDefault(); cerrarSesion(); });
+
+  // Cerrar menú clic fuera
+  document.addEventListener("click", e => {
+    const menu = document.getElementById("menu-usuario-li");
+    const btn  = document.getElementById("btn-usuario");
+    if (menu && btn && !menu.contains(e.target) && e.target !== btn) {
+      menu.classList.remove("activo");
+    }
+  });
+
+  updateResendButton();
 });

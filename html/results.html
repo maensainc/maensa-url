@@ -35,13 +35,16 @@
 
   <!-- CONTENIDO PRINCIPAL -->
   <main>
-  <div class="results-container">
-    <header><h1>Resultados de Receipts</h1></header>
-    <table id="results-table">
-      <!-- ... -->
-    </table>
-    <button id="btn-download" class="btn-primary">Descargar CSV</button>
-  </div>
+    <div class="results-container">
+      <header><h1>Resultados de Receipts</h1></header>
+
+      <!-- tabla vacía: se completará desde planes.js -->
+      <table id="results-table"></table>
+
+      <button id="btn-download" class="btn-primary">
+        Descargar CSV
+      </button>
+    </div>
   </main>
 
   <!-- FOOTER GLOBAL -->
@@ -49,141 +52,7 @@
     <p>© 2025 Maensa. Todos los derechos reservados.</p>
   </footer>
 
-  <script src="../js/planes.js"></script>  <!-- asume tu script de login/registro aquí -->
-  <script>
-    // --- Auto‐login & menú igual que en las otras páginas ---
-    document.addEventListener("DOMContentLoaded", () => {
-      const u = localStorage.getItem("usuario");
-      if (u) {
-        try { loginExitoso(JSON.parse(u)); }
-        catch (e) { console.warn("Parse error usuario:", e); }
-      }
-      document.getElementById("btn-login")?.addEventListener("click", e => { e.preventDefault(); mostrarLogin(); });
-      document.getElementById("btn-register")?.addEventListener("click", e => { e.preventDefault(); mostrarRegistro(); });
-      document.getElementById("btn-usuario")?.addEventListener("click", e => { e.preventDefault(); toggleMenuUsuario(); });
-      document.getElementById("cerrar-sesion")?.addEventListener("click", e => { e.preventDefault(); cerrarSesion(); });
-      document.addEventListener("click", e => {
-        const menu = document.getElementById("menu-usuario-li");
-        if (menu && !menu.contains(e.target) && e.target.id !== "btn-usuario") {
-          menu.classList.remove("activo");
-        }
-      });
-    });
-
-    // --- Renderizado de tabla y descarga CSV ---
-    const data = JSON.parse(localStorage.getItem("receiptResult") || "[]");
-    if (!data.length) {
-      alert("No hay datos para mostrar.");
-      window.location.href = "upload.html";
-    }
-
-    const allKeys = [
-      'fileName', 'fecha', 'hora', 'totalBruto', 'totalNeto',
-      'impuestos', 'moneda', 'proveedor', 'direccion',
-      'numeroRecibo', 'items'
-    ];
-
-    const table = document.getElementById("results-table");
-    table.innerHTML = "";
-
-    // thead
-    const thead = document.createElement("thead");
-    const headRow = document.createElement("tr");
-    allKeys.forEach(key => {
-      const th = document.createElement("th");
-      th.textContent = key;
-      headRow.appendChild(th);
-    });
-    thead.appendChild(headRow);
-    table.appendChild(thead);
-
-    // tbody
-    const tbody = document.createElement("tbody");
-    data.forEach(row => {
-      const tr = document.createElement("tr");
-      allKeys.forEach(key => {
-        const td = document.createElement("td");
-        let val = row[key];
-        if (key === 'items' && Array.isArray(val)) {
-          val = val
-            .map(item => `${item.descripcion} x${item.cantidad||1} @${item.precioUnit||item.precio}`)
-            .join("; ");
-        } else if (typeof val === "object" && val !== null) {
-          val = JSON.stringify(val);
-        }
-        td.contentEditable = "true";
-        td.textContent = val != null ? val : "";
-        td.addEventListener("input", () =>
-          row[key] = td.textContent
-        );
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-
-    document.getElementById("btn-download").addEventListener("click", () => {
-      let csv = allKeys.join(",") + "\n";
-      data.forEach(row => {
-        csv += allKeys
-          .map(k => `"${(row[k]||"").toString().replace(/"/g,'""')}"`)
-          .join(",") + "\n";
-      });
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "recibos.csv";
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    document.addEventListener("DOMContentLoaded", () => {
-  // 1) Auto‐login si hay usuario en localStorage
-  const raw = localStorage.getItem("usuario");
-  if (raw) {
-    try {
-      loginExitoso(JSON.parse(raw));
-    } catch (e) {
-      console.warn("Error parseando usuario:", e);
-    }
-  }
-
-  // 2) Abrir modales de login y registro
-  document.getElementById("btn-login")?.addEventListener("click", e => {
-    e.preventDefault();
-    mostrarLogin();
-  });
-  document.getElementById("btn-register")?.addEventListener("click", e => {
-    e.preventDefault();
-    mostrarRegistro();
-  });
-
-  // 3) Toggle del menú de usuario
-  const btnUser = document.getElementById("btn-usuario");
-  const menuLi  = document.getElementById("menu-usuario-li");
-  btnUser?.addEventListener("click", e => {
-    e.preventDefault();
-    menuLi.classList.toggle("activo");
-  });
-
-  // 4) Cerrar menú al clicar fuera
-  document.addEventListener("click", e => {
-    if (
-      menuLi &&
-      !menuLi.contains(e.target) &&
-      e.target !== btnUser
-    ) {
-      menuLi.classList.remove("activo");
-    }
-  });
-
-  // 5) Cerrar sesión
-  document.getElementById("cerrar-sesion")?.addEventListener("click", e => {
-    e.preventDefault();
-    cerrarSesion();
-  });
-});
-  </script>
+  <!-- tu script único -->
+  <script src="../js/planes.js"></script>
 </body>
 </html>
