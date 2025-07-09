@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maensa - Organización de Recibos</title>
+  <link rel="stylesheet" href="../Maensa.css">
+  <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="header">
+  <div class="logo">
+    <a href="Maensa.html">
+      <img src="../fotos/logo.jpg" alt="Logo Maensa" />
+    </a>
+  </div>
+
+  <nav class="inicio_de_sesion">
+    <ul>
+      <li>
+        <a href="#" onclick="mostrarLogin(); return false;">Iniciar sesión</a>
+      </li>
+      <li>
+        <a href="#" onclick="mostrarRegistro(); return false;">Registrarse</a></li>
+
+      <li class="menu-usuario hidden" id="menu-usuario-li">
+        <a
+          href="#"
+          id="btn-usuario"
+          onclick="toggleMenuUsuario(); return false;"
+        >
+          <span class="nombre-usuario"></span>
+          <img
+            src="../fotos/usuario.png"
+            alt="Usuario"
+            class="icono-usuario"
+          />
+        </a>
+        <div class="menu-desplegable">
+          <a href="cuenta.html">Cuenta</a>
+          <a href="planel.html">Planes</a>
+          <a href="#">Subir imágenes</a>
+          <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+</header>
+
+  <main>
+<section class="zona-drop-hero">
+  <div class="contenedor-hero">
+    <div class="texto-hero">
+      <a href="#" onclick="scrollASeccion('caja-carrusel')" class="texto-scroll">← ¿Por qué usar Maensa?</a>
+      <h1>Organizá tus recibos de forma inteligente</h1>
+      <p class="sub">Subí tus comprobantes. Obtené resultados inmediatos. Sin errores.</p>
+      <div class="acciones-hero">
+        <button onclick="scrollToDrop()" class="btn-comenzar">Comenzar →</button>
+        <a href="#planes" class="link-planes">Comparar los planes</a>
+      </div>
+    </div>
+
+    <div class="drop-cuadro drop-hero" id="drop-area">
+      <p>📁 Arrastrá tu carpeta de recibos aquí</p>
+      <span>O hacé clic para seleccionarla</span>
+      <input type="file" id="fileElem" multiple webkitdirectory directory hidden />
+    </div>
+  </div>
+</section>
+
+
+<section class="modal-login">
+  <div id="modal-login" class="modal hidden">
+    <div class="modal-content" id="login-caja">
+      <span class="close" onclick="cerrarModal()">&times;</span>
+      <h2>Iniciar sesión</h2>
+      <input type="email"    placeholder="Correo electrónico" id="email-login">
+      <input type="password" placeholder="Contraseña"         id="password-login">
+      <button id="btn-iniciar-sesion" type="button">
+        Ingresar
+      </button>
+      <p>¿No tenés cuenta? <a href="#" onclick="mostrarRegistro()">Registrate</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================
+     Modal de Registro (3 pasos)
+     =========================== -->
+<section class="modal-register">
+  <div id="modal-register" class="modal hidden">
+    <div class="modal-content registro" id="registro-container">
+
+      <!-- Indicador de pasos -->
+      <div class="pasos-indicador">
+        <span id="punto-1" class="punto activo"></span>
+        <span id="punto-2" class="punto"></span>
+        <span id="punto-3" class="punto"></span>
+      </div>
+
+      <!-- Paso 1: Formulario -->
+<div id="registro-paso-1">
+  <span class="close" onclick="cerrarModalRegistro(); return false;">&times;</span>
+  <h2>Registrarse</h2>
+  <input type="text"     id="nombre"             placeholder="Nombre" />
+  <input type="text"     id="apellido"           placeholder="Apellido" />
+  <input type="email"    id="email"              placeholder="Correo electrónico" />
+  <input type="tel"      id="telefono"           placeholder="Número de teléfono" />
+  <input type="date"     id="fecha_nacimiento"                        />
+  <input type="password" id="password"           placeholder="Contraseña" />
+  <!-- Aquí va la indicación de formato -->
+  <small class="password-info">
+    La contraseña debe tener mínimo 8 caracteres, al menos una letra mayúscula y un número.
+  </small>
+  <button type="button" onclick="irAPaso2(); return false;">
+    Siguiente
+  </button>
+  <p>
+    ¿Ya tenés cuenta?
+    <a href="#" onclick="mostrarLogin(); return false;">
+      Iniciá sesión
+    </a>
+  </p>
+</div>
+
+      <!-- Paso 2: Verificación de código -->
+<div id="registro-paso-2" class="hidden">
+  <span class="close" onclick="cerrarModalRegistro(); return false;">&times;</span>
+  <h2>Verificá tu correo</h2>
+  <p>Ingresá el código de 6 dígitos que te enviamos:</p>
+  <input
+    type="text"
+    id="codigo-verificacion"
+    maxlength="6"
+    placeholder="Código de verificación"
+  />
+  <div class="verificacion-acciones">
+    <button onclick="verificarCodigo(); return false;">
+      Verificar
+    </button>
+    <!-- Nuevo botón de reenvío -->
+    <button id="btn-reenviar-codigo" type="button" onclick="reenviarCodigo(); return false;">
+      Reenviar código
+    </button>
+  </div>
+  <p class="reenvio-info">
+    Si no recibiste el mail, podés reenviarlo cada 30 segundos.
+  </p>
+  <p>
+    <a href="#" onclick="volverAPaso1(); return false;">
+      ← Volver
+    </a>
+  </p>
+</div>
+
+      <!-- Paso 3: Elección de plan -->
+      <div id="registro-paso-3" class="hidden">
+        <span class="close" onclick="cerrarModalRegistro(); return false;">&times;</span>
+        <h2>Elegí un plan</h2>
+        <div class="planes-pilares">
+          <label class="pilar-card">
+            <input type="radio" name="plan" value="basico" hidden checked />
+            <div class="pilar-content">
+              <h3>🟢 Plan Básico</h3>
+              <p class="precio">Gratis por 1 día</p>
+              <ul>
+                <li>✔ Prueba por 1 día</li>
+                <li>✖ Capturas limitadas</li>
+                <li>✖ Acceso total</li>
+              </ul>
+            </div>
+          </label>
+          <label class="pilar-card">
+            <input type="radio" name="plan" value="pro" hidden />
+            <div class="pilar-content">
+              <h3>🔵 Plan Pro</h3>
+              <p class="precio">$999 / mes</p>
+              <ul>
+                <li>✔ Hasta 50 capturas diarias</li>
+                <li>✔ Soporte prioritario</li>
+                <li>✖ Capturas ilimitadas</li>
+              </ul>
+            </div>
+          </label>
+          <label class="pilar-card">
+            <input type="radio" name="plan" value="empresa" hidden />
+            <div class="pilar-content">
+              <h3>🔴 Plan Empresa</h3>
+              <p class="precio">$2999 / mes</p>
+              <ul>
+                <li>✔ Capturas ilimitadas</li>
+                <li>✔ Soporte 24/7</li>
+                <li>✔ Reportes avanzados</li>
+              </ul>
+            </div>
+          </label>
+        </div>
+        <button onclick="finalizarRegistro(); return false;">
+          Finalizar registro
+        </button>
+        <p>
+          <a href="#" onclick="volverAPaso2(); return false;">
+            ← Volver
+          </a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="como-funciona-parallax">
+  <div class="contenido-funciona">
+    <h2>¿Cómo funciona?</h2>
+    <ol>
+      <li>📁 Subí una carpeta con recibos, facturas o tickets en PDF o imagen (JPG, PNG).</li>
+      <li>🔍 El sistema analiza cada archivo usando inteligencia artificial entrenada en cientos de documentos reales.</li>
+      <li>🤖 Extrae automáticamente la información clave: fecha, monto, CUIT, concepto, etc.</li>
+      <li>📤 Crea un archivo Excel con todos los datos estructurados, listos para usar.</li>
+      <li>📂 Guardás tus comprobantes ordenados digitalmente para futuras búsquedas.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="section-box seccion-carrusel" id="caja-carrusel" data-aos="fade-up" data-aos-duration="1000">
+  <h2 class="titulo-carrusel">¿Por qué usar Maensa?</h2>
+
+  <div class="carrusel-container" id="carrusel-container">
+    <div class="carrusel-wrapper" id="carrusel-wrapper">
+      
+      <div class="carrusel-slide slide-problemas" data-aos="fade-right">
+        <h3>Problemas que resolvemos</h3>
+        <ul>
+          <li>⏱️ <strong>Pérdida de tiempo:</strong> ingreso manual lento y poco escalable.</li>
+          <li>❌ <strong>Errores humanos:</strong> digitación incorrecta o mala interpretación.</li>
+          <li>💸 <strong>Costos altos:</strong> tareas repetitivas que ocupan recursos.</li>
+          <li>📉 <strong>Retrasos en reportes:</strong> afectan la toma de decisiones.</li>
+        </ul>
+      </div>
+
+      <div class="carrusel-slide slide-solucion" data-aos="fade-right">
+        <h3>¿Qué hace Maensa?</h3>
+        <ul>
+          <li>🤖 Automatizamos el ingreso de comprobantes con IA.</li>
+          <li>📄 Extraemos información clave con precisión.</li>
+          <li>📊 Generamos archivos Excel limpios y listos.</li>
+          <li>⚙️ Sin instalación, listo para usar en minutos.</li>
+        </ul>
+      </div>
+
+      <!-- Slide 3 -->
+      <div class="carrusel-slide slide-beneficios" data-aos="fade-right">
+        <h3>Beneficios concretos</h3>
+        <ul>
+          <li>✅ Reducción de tareas mecánicas.</li>
+          <li>✅ Menos errores, más velocidad.</li>
+          <li>✅ Ahorro de tiempo y dinero desde el día 1.</li>
+          <li>✅ Enfocá a tu equipo en lo que importa.</li>
+        </ul>
+      </div>
+
+      <!-- Slide 4 -->
+      <div class="carrusel-slide slide-confiar" data-aos="fade-right">
+        <h3>¿Por qué confiar en nosotros?</h3>
+        <ul>
+          <li>🧠 Modelos entrenados con miles de documentos reales.</li>
+          <li>🔐 Seguridad y privacidad de tus datos garantizada.</li>
+          <li>📈 Escalable para cualquier tamaño de negocio.</li>
+          <li>💼 Ideal para ecommerce, estudios contables y pymes.</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="carrusel-indicadores" id="indicadores">
+    <span class="indicador activo"></span>
+    <span class="indicador"></span>
+    <span class="indicador"></span>
+    <span class="indicador"></span>
+  </div>
+</section>
+
+
+
+<section class="faq section-box" data-aos="fade-up">
+  <h2>Preguntas Frecuentes</h2>
+
+  <div class="faq-item">
+    <button class="faq-pregunta">¿Qué tipos de comprobantes reconoce Maensa?</button>
+    <div class="faq-respuesta">
+      <p>Reconocemos facturas, recibos, tickets y otros documentos en formato PDF, PNG o JPG.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-pregunta">¿Necesito conocimientos técnicos para usar Maensa?</button>
+    <div class="faq-respuesta">
+      <p>No. El sistema está diseñado para ser intuitivo: subís los archivos y descargás el Excel organizado automáticamente.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-pregunta">¿Qué pasa con mis datos? ¿Son seguros?</button>
+    <div class="faq-respuesta">
+      <p>Tu información está protegida con protocolos de seguridad. No compartimos tus datos con terceros.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-pregunta">¿Cuánto tarda en procesarse una carpeta?</button>
+    <div class="faq-respuesta">
+      <p>Depende de la cantidad de documentos, pero en promedio toma menos de 1 minuto por lote.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-pregunta">¿Puedo probar Maensa gratis?</button>
+    <div class="faq-respuesta">
+      <p>Sí. Contamos con un plan básico gratuito que podés usar sin límite de tiempo, aunque con funcionalidades reducidas.</p>
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-pregunta">¿Qué diferencia hay entre los planes?</button>
+    <div class="faq-respuesta">
+      <p>El plan gratuito incluye funciones básicas. Los planes pagos habilitan procesamiento masivo, prioridad en soporte y reportes avanzados.</p>
+    </div>
+  </div>
+</section>
+
+
+<section class="section-box info-grid" data-aos="fade-right">
+  <div class="info-pilar" id="info-pilar">
+    <h2 class="titulo-seccion">Quiénes somos</h2>
+    <p>
+      <strong>Maensa</strong> es una empresa dedicada a la organización inteligente de datos mediante el uso de inteligencia artificial. 
+      Nuestro objetivo es reemplazar tareas repetitivas y propensas a errores como el data entry manual, optimizando así tiempo y recursos.
+    </p>
+    <p>
+      ¿Por qué automatizar este proceso? Porque permite manejar grandes volúmenes de datos con precisión, facilitando la toma de decisiones 
+      estratégicas para tu emprendimiento, mejorando la eficiencia operativa y ayudando a reducir costos innecesarios.
+    </p>
+  </div>
+
+  <div class="info-pilar tarjeta-contacto">
+    <h2 class="titulo-contacto">Contacto</h2>
+    <ul class="lista-contacto">
+      <li>
+        <img src="../fotos/mail.png" alt="mail" class="icono-contacto">
+        <a href="mailto:contacto@maensa.com" class="link-contacto">contacto@maensa.com</a>
+      </li>
+      <li>
+        <img src="../fotos/ig.png" alt="ig" class="icono-contacto">
+        <a href="https://instagram.com/maensainc" class="link-contacto" target="_blank">@maensainc</a>
+      </li>
+      <li>
+        <img src="" alt="whatsapp" class="icono-contacto">
+        <a href="https://wa.me/549XXXXXXXXXX" class="link-contacto" target="_blank">WhatsApp</a>
+      </li>
+    </ul>
+  </div>
+</section>
+
+  </main>
+
+  <footer>
+    <p>© 2025 Maensa. Todos los derechos reservados.</p>
+  </footer>
+
+  <script src="../js/Maensa.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+  <script>
+    AOS.init({
+      duration: 800, 
+      once: true    
+    });
+  </script>
+</body>
+</html>

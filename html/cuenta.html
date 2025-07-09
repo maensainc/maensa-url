@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mi Cuenta - Maensa</title>
+  <link rel="stylesheet" href="../Maensa.css">
+</head>
+<body class="modo-oscuro" id="body-cuenta">
+  <header class="header">
+  <div class="logo">
+    <a href="Maensa.html"><img src="../fotos/logo.jpg" alt="Logo Maensa"></a>
+  </div>
+  <nav class="inicio_de_sesion">
+    <ul>
+      <li><a href="#" id="btn-login">Iniciar sesión</a></li>
+      <li><a href="#" id="btn-register">Registrarse</a></li>
+      <li class="menu-usuario hidden" id="menu-usuario-li">
+        <a href="#" id="btn-usuario">
+          <span class="nombre-usuario"></span>
+          <img src="../fotos/usuario.png" alt="Usuario" class="icono-usuario">
+        </a>      
+        <div id="menu-desplegable" class="menu-desplegable">
+          <a href="cuenta.html">Cuenta</a>
+          <a href="planel.html">Planes</a>
+          <a href="#">Subir imágenes</a>
+          <a href="#" id="cerrar-sesion">Cerrar sesión</a>
+        </div>
+      </li>
+    </ul>
+  </nav>
+</header>
+  <section class="cuenta-container" >
+    <div class="cuenta-box" id="cuenta-box">
+      <div class="perfil-header">
+        <img src="../fotos/usuario.png" class="foto-perfil" alt="Usuario">
+        <div>
+          <h2 class="nombre-usuario-cuenta">geronimo</h2>
+          <button class="btn-editar-perfil">Editar perfil de usuario</button>
+        </div>
+      </div>
+
+      <div class="cuenta-datos">
+        <div class="dato-item">
+          <span>Nombre</span>
+          <span id="nombre-valor">geronimo</span>
+          <button class="btn-editar">Editar</button>
+        </div>
+
+        <div class="dato-item">
+          <span>Apellido</span>
+          <span id="apellido-valor">enrici</span>
+          <button class="btn-editar">Editar</button>
+        </div>
+
+        <div class="dato-item">
+        <span class="label">Correo Electrónico</span>
+        <span id="email-valor" class="valor-dato">********@gmail.com</span>
+          <div class="acciones-dato">
+            <button class="ver-dato"
+              onmousedown="mostrarDato('email')"
+              onmouseup="ocultarDato('email')"
+              onmouseleave="ocultarDato('email')">
+              <img src="../fotos/ojito.png" class="ojito" alt="Ver">
+            </button>
+            <button class="btn-editar">Editar</button>
+          </div>
+        </div>
+
+        <div class="dato-item">
+        <span class="label">Teléfono</span>
+        <span id="telefono-valor" class="valor-dato">*****1111</span>
+          <div class="acciones-dato">
+            <button class="ver-dato"
+              onmousedown="mostrarDato('telefono')"
+              onmouseup="ocultarDato('telefono')"
+              onmouseleave="ocultarDato('telefono')">
+              <img src="../fotos/ojito.png" class="ojito" alt="Ver">
+            </button>
+            <button class="btn-editar">Editar</button>
+          </div>
+        </div>
+    </div>
+    </div>
+    <div class="cuenta-box">
+      <h3>Contraseña y autenticación</h3>
+      <button class="btn-accion azul" onclick="cambiarPassword()">Cambiar contraseña</button>
+      <button class="btn-accion rojo" id="btn-toggle-estado" onclick="alternarEstadoCuenta()">Deshabilitar cuenta</button>
+      <button class="btn-accion gris" onclick="eliminarCuenta()">Eliminar cuenta</button>
+    </div>
+  </section>
+  <div id="modal-eliminar" class="modal hidden">
+  <div class="modal-contenido">
+    <h2>¿Estás seguro?</h2>
+    <p>Esta acción eliminará tu cuenta permanentemente y no se puede deshacer.</p>
+    <input type="password" id="input-password-eliminar" placeholder="Confirmá tu contraseña">
+    <div class="modal-botones">
+      <button class="btn-cancelar" onclick="cerrarModalEliminar()">Cancelar</button>
+      <button class="btn-confirmar" onclick="confirmarEliminarCuenta()">Eliminar cuenta</button>
+    </div>
+  </div>
+</div>
+<div id="modal-toggle-cuenta" class="modal hidden">
+  <div class="modal-contenido">
+    <h2 id="titulo-toggle">¿Deshabilitar cuenta?</h2>
+    <p id="texto-toggle">Podrás volver a activarla más tarde si tu plan sigue vigente.</p>
+    <input type="password" id="input-contrasena-toggle" placeholder="Confirmá tu contraseña">
+    <div class="modal-botones">
+      <button class="btn-cancelar" onclick="cerrarModalAlternar()">Cancelar</button>
+      <button class="btn-confirmar" id="btn-confirmar-toggle" onclick="confirmarAlternancia()">Confirmar</button>
+    </div>
+  </div>
+</div>
+  <script src="../js/cuenta.js"></script>
+</body>
+<footer>
+    <p>© 2025 Maensa. Todos los derechos reservados.</p>
+  </footer>
+</html>

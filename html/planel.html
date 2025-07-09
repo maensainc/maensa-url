@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Planes Maensa</title>
+    <link rel="stylesheet" href="../Maensa.css">
+</head>
+<body class="body-planes">
+      <header class="header">
+  <div class="logo">
+    <a href="Maensa.html"><img src="../fotos/logo.jpg" alt="Logo Maensa"></a>
+  </div>
+<nav class="inicio_de_sesion">
+  <ul>
+    <li><a href="#" id="btn-login">Iniciar sesión</a></li>
+    <li><a href="#" id="btn-register">Registrarse</a></li>
+    <li class="menu-usuario hidden" id="menu-usuario-li">
+      <a href="#" id="btn-usuario">
+        <span class="nombre-usuario"></span>
+        <img src="../fotos/usuario.png" alt="Usuario" class="icono-usuario">
+      </a>
+      <div id="menu-desplegable" class="menu-desplegable">
+        <a href="cuenta.html">Cuenta</a>
+        <a href="planel.html">Planes</a>
+        <a href="#">Subir imágenes</a>
+        <a href="#" id="cerrar-sesion">Cerrar sesión</a>
+      </div>
+    </li>
+  </ul>
+</nav>
+</header>
+  <header>
+    <h1>Elige tu plan</h1>
+  </header>
+  <main>
+    <section class="modal-login">
+  <div id="modal-login" class="modal hidden">
+    <div class="modal-content" id="login-caja">
+      <span class="close" onclick="cerrarModal()">&times;</span>
+      <h2>Iniciar sesión</h2>
+      <input type="email"    placeholder="Correo electrónico" id="email-login">
+      <input type="password" placeholder="Contraseña"         id="password-login">
+      <button id="btn-iniciar-sesion" type="button">
+        Ingresar
+      </button>
+      <p>¿No tenés cuenta? <a href="#" onclick="mostrarRegistro()">Registrate</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ===========================
+     Modal de Registro (3 pasos)
+     =========================== -->
+<section class="modal-register">
+  <div id="modal-register" class="modal hidden">
+    <div class="modal-content registro" id="registro-container">
+
+      <!-- Indicador de pasos -->
+      <div class="pasos-indicador">
+        <span id="punto-1" class="punto activo"></span>
+        <span id="punto-2" class="punto"></span>
+        <span id="punto-3" class="punto"></span>
+      </div>
+
+      <!-- Paso 1: Formulario -->
+<div id="registro-paso-1">
+  <span class="close" onclick="cerrarModalRegistro(); return false;">&times;</span>
+  <h2>Registrarse</h2>
+  <input type="text"     id="nombre"             placeholder="Nombre" />
+  <input type="text"     id="apellido"           placeholder="Apellido" />
+  <input type="email"    id="email"              placeholder="Correo electrónico" />
+  <input type="tel"      id="telefono"           placeholder="Número de teléfono" />
+  <input type="date"     id="fecha_nacimiento"                        />
+  <input type="password" id="password"           placeholder="Contraseña" />
+  <!-- Aquí va la indicación de formato -->
+  <small class="password-info">
+    La contraseña debe tener mínimo 8 caracteres, al menos una letra mayúscula y un número.
+  </small>
+  <button type="button" onclick="irAPaso2(); return false;">
+    Siguiente
+  </button>
+  <p>
+    ¿Ya tenés cuenta?
+    <a href="#" onclick="mostrarLogin(); return false;">
+      Iniciá sesión
+    </a>
+  </p>
+</div>
+
+      <!-- Paso 2: Verificación de código -->
+<div id="registro-paso-2" class="hidden">
+  <span class="close" onclick="cerrarModalRegistro(); return false;">&times;</span>
+  <h2>Verificá tu correo</h2>
+  <p>Ingresá el código de 6 dígitos que te enviamos:</p>
+  <input
+    type="text"
+    id="codigo-verificacion"
+    maxlength="6"
+    placeholder="Código de verificación"
+  />
+  <div class="verificacion-acciones">
+    <button onclick="verificarCodigo(); return false;">
+      Verificar
+    </button>
+    <!-- Nuevo botón de reenvío -->
+    <button id="btn-reenviar-codigo" type="button" onclick="reenviarCodigo(); return false;">
+      Reenviar código
+    </button>
+  </div>
+  <p class="reenvio-info">
+    Si no recibiste el mail, podés reenviarlo cada 30 segundos.
+  </p>
+  <p>
+    <a href="#" onclick="volverAPaso1(); return false;">
+      ← Volver
+    </a>
+  </p>
+</div>
+
+      <!-- Paso 3: Elección de plan -->
+      <div id="registro-paso-3" class="hidden">
+        <span class="close" onclick="cerrarModalRegistro(); return false;">&times;</span>
+        <h2>Elegí un plan</h2>
+        <div class="planes-pilares">
+          <label class="pilar-card">
+            <input type="radio" name="plan" value="basico" hidden checked />
+            <div class="pilar-content">
+              <h3>🟢 Plan Básico</h3>
+              <p class="precio">Gratis por 1 día</p>
+              <ul>
+                <li>✔ Prueba por 1 día</li>
+                <li>✖ Capturas limitadas</li>
+                <li>✖ Acceso total</li>
+              </ul>
+            </div>
+          </label>
+          <label class="pilar-card">
+            <input type="radio" name="plan" value="pro" hidden />
+            <div class="pilar-content">
+              <h3>🔵 Plan Pro</h3>
+              <p class="precio">$999 / mes</p>
+              <ul>
+                <li>✔ Hasta 50 capturas diarias</li>
+                <li>✔ Soporte prioritario</li>
+                <li>✖ Capturas ilimitadas</li>
+              </ul>
+            </div>
+          </label>
+          <label class="pilar-card">
+            <input type="radio" name="plan" value="empresa" hidden />
+            <div class="pilar-content">
+              <h3>🔴 Plan Empresa</h3>
+              <p class="precio">$2999 / mes</p>
+              <ul>
+                <li>✔ Capturas ilimitadas</li>
+                <li>✔ Soporte 24/7</li>
+                <li>✔ Reportes avanzados</li>
+              </ul>
+            </div>
+          </label>
+        </div>
+        <button onclick="finalizarRegistro(); return false;">
+          Finalizar registro
+        </button>
+        <p>
+          <a href="#" onclick="volverAPaso2(); return false;">
+            ← Volver
+          </a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+    <div class="plans">
+      <!-- Plan Gratis -->
+      <div class="plan-card">
+        <h2>Plan Gratis</h2>
+        <div class="price">$0</div>
+        <div class="duration">1 día de prueba</div>
+        <ul>
+          <li>Hasta 20 fotos</li>
+        </ul>
+        <button>Seleccionar</button>
+      </div>
+
+      <!-- Plan Básico -->
+      <div class="plan-card">
+        <h2>Plan Básico</h2>
+        <div class="price">$40.000</div>
+        <div class="duration">20 fotos / mes</div>
+        <ul>
+          <li>Renovación mensual</li>
+          <li>Soporte básico</li>
+        </ul>
+        <button>Contratar</button>
+      </div>
+
+      <!-- Plan Intermedio -->
+      <div class="plan-card">
+        <h2>Plan Intermedio</h2>
+        <div class="price">$60.000</div>
+        <div class="duration">50 fotos / mes</div>
+        <ul>
+          <li>Renovación mensual</li>
+          <li>Soporte prioritario</li>
+        </ul>
+        <button>Contratar</button>
+      </div>
+
+      <!-- Plan Pro -->
+      <div class="plan-card">
+        <h2>Plan Pro</h2>
+        <div class="price">$100.000</div>
+        <div class="duration">100 fotos / mes</div>
+        <ul>
+          <li>Renovación mensual</li>
+          <li>Soporte 24/7</li>
+        </ul>
+        <button>Contratar</button>
+      </div>
+
+      <!-- Plan Ilimitado -->
+      <div class="plan-card">
+        <h2>Plan Ilimitado</h2>
+        <div class="price">$200.000</div>
+        <div class="duration">Fotos ilimitadas</div>
+        <ul>
+          <li>Renovación mensual</li>
+          <li>Soporte premium</li>
+        </ul>
+        <button>Contratar</button>
+      </div>
+    </div>
+  </main>
+    <footer>
+    <p>© 2025 Maensa. Todos los derechos reservados.</p>
+  </footer>
+<script src="../js/planes.js"></script>
+</body>
+</html>
