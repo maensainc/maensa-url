@@ -244,32 +244,54 @@ function actualizarIndicador(paso) {
 // LOGIN / SESIÓN
 // ==============================
 async function iniciarSesion() {
+  console.log('>> iniciarSesion llamado');
   const email    = document.getElementById("email-login").value.trim();
   const password = document.getElementById("password-login").value.trim();
+  console.log({ email, password });
+
   if (!email || !password) {
     alert("Email y contraseña obligatorios.");
     return;
   }
+
   try {
-    const res  = await fetch(`${API_BASE}/api/login`, {
+    const res = await fetch(`${API_BASE}/api/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
+
+    console.log('Status:', res.status);
     const data = await res.json();
+    console.log('Response:', data);
+
     if (!res.ok || data.error) {
       alert(data.error || "Error al iniciar sesión.");
       return;
     }
+
+    // Guardar usuario y mostrar UI
     localStorage.setItem("usuario", JSON.stringify(data.usuario));
     alert(`¡Bienvenido/a ${data.usuario.nombre}!`);
-    cerrarModal();
+    cerrarModal();            // cierra el modal de login
     loginExitoso(data.usuario);
   } catch (err) {
-    console.error(err);
+    console.error("Error de conexión al iniciar sesión:", err);
     alert("Error de conexión al iniciar sesión.");
   }
 }
+
+// ————— Vinculación en DOMContentLoaded —————
+document.addEventListener('DOMContentLoaded', () => {
+  const btnLogin = document.getElementById("btn-iniciar-sesion");
+  console.log("btnLogin existe?", btnLogin);
+  if (btnLogin) {
+    btnLogin.addEventListener("click", e => {
+      e.preventDefault();
+      iniciarSesion();
+    });
+  }
+});
 
 function loginExitoso(usuario) {
   document.querySelector('a[onclick="mostrarLogin(); return false;"]').style.display    = "none";
@@ -349,7 +371,7 @@ function scrollASeccion(id) {
   window.scrollTo({ top: y, behavior: "smooth" });
 }
 
-window.addEventListener("DOMContentLoaded", () => {
+document.addEventListener('DOMContentLoaded', () => {
   // 1) Login automático si ya hay usuario
   const u = localStorage.getItem("usuario");
   if (u) {
@@ -357,159 +379,40 @@ window.addEventListener("DOMContentLoaded", () => {
     catch (e) { console.warn("Error parseando usuario:", e); }
   }
 
-  // 2) Cerrar menú al hacer click fuera
-  document.addEventListener("click", (e) => {
-    const menu = document.getElementById("menu-usuario-li");
-    const btn  = document.getElementById("btn-usuario");
-    if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) {
-      menu.classList.remove("activo");
-    }
-  });
+  // 2) Bind de botones de auth (login, register, reenvío de código…)
+  if (typeof updateResendButton === "function") updateResendButton();
 
-  // 3) Asociar el botón Ingresar a iniciarSesion()
-  const btnLogin = document.getElementById("btn-iniciar-sesion");
-  if (btnLogin) {
-    btnLogin.addEventListener("click", (e) => {
-      e.preventDefault();
-      iniciarSesion();
-    });
-  }
-
-  // 4) (Opcional) reenvío de código
-  const btnReenviar = document.getElementById("btn-reenviar-codigo");
-  if (btnReenviar) {
-    btnReenviar.addEventListener("click", (e) => {
-      e.preventDefault();
-      reenviarCodigo();
-    });
-  }
-
-  // 5) Carrusel y AOS
+  // 3) Carrusel, AOS, scroll suave, FAQ…
   reiniciarTimer();
   AOS.init({ duration: 800, once: true });
 
-  // 6) Estado inicial del botón de reenvío
-  if (typeof updateResendButton === "function") {
-    updateResendButton();
+  // 4) Listener para “Comenzar →”
+  const btnComenzar = document.getElementById('btn-comenzar');
+  if (btnComenzar) {
+    btnComenzar.addEventListener('click', e => {
+      e.preventDefault();
+      const rawUser = localStorage.getItem('usuario');
+      if (!rawUser) {
+        mostrarRegistro();
+      } else {
+        window.location.href = 'upload.html';
+      }
+    });
   }
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-  const dropArea = document.getElementById("drop-area");
-  const fileElem = document.getElementById("fileElem");
-  if (!dropArea || !fileElem) {
-    console.error("drop-area o fileElem no encontrado");
-    return;
-  }
 
-  async function manejarArchivos(files) {
-    const raw = localStorage.getItem("usuario");
-    if (!raw) return mostrarLogin();
-    const u = JSON.parse(raw);
-    if (!u.plan || u.plan === "basico") {
-      return void (window.location.href = "planel.html");
-    }
-
-    // guardo metadata + archivos
-    sessionStorage.setItem(
-      "pendingFilesMeta",
-      JSON.stringify(Array.from(files).map(f => ({ name: f.name, size: f.size })))
-    );
-    window.__PENDING_FILES__ = files;
-
-    console.log("→ Subiendo", files.length, "archivos");
-    window.location.href = "upload.html";
-  }
-
-  dropArea.addEventListener("click", e => {
-    e.preventDefault(); 
-    const raw = localStorage.getItem("usuario");
-    if (!raw) return mostrarLogin();
-    const u = JSON.parse(raw);
-    if (!u.plan || u.plan === "basico") {
-      return void (window.location.href = "planel.html");
-    }
-    fileElem.click();
-  });
-
-  fileElem.addEventListener("change", () => {
-    if (fileElem.files.length) manejarArchivos(fileElem.files);
-  });
-
-  dropArea.addEventListener("dragover", e => {
+const btnComenzar = document.getElementById('btn-comenzar');
+console.log('btnComenzar existe?', btnComenzar);
+if (btnComenzar) {
+  btnComenzar.addEventListener('click', e => {
     e.preventDefault();
-    dropArea.classList.add("dragging");
+    console.log('¡Clic en Comenzar! rawUser =', localStorage.getItem('usuario'));
+    const rawUser = localStorage.getItem('usuario');
+    if (!rawUser) {
+      mostrarRegistro();
+    } else {
+      window.location.href = 'upload.html';
+    }
   });
-  dropArea.addEventListener("dragleave", () => {
-    dropArea.classList.remove("dragging");
-  });
-  dropArea.addEventListener("drop", e => {
-    e.preventDefault();
-    dropArea.classList.remove("dragging");
-    if (e.dataTransfer.files.length) manejarArchivos(e.dataTransfer.files);
-  });
-});
-
-let pendingFiles = null;
-
-// 1) función para cargar el fragmento de upload
-async function irAPaginaUpload(files) {
-  try {
-    // guarda los File para luego procesarlos
-    pendingFiles = files;
-
-    // baja el fragmento HTML
-    const res  = await fetch('upload-fragment.html');
-    const html = await res.text();
-
-    // inyecta en el body (o en un contenedor específico)
-    document.body.innerHTML = html;
-
-    // re-inserta tu lógica de subida (la de planes.js)
-    const script = document.createElement('script');
-    script.textContent = `
-      const files = pendingFiles;
-      // ...copia aquí la lógica de previews y fetch de planes.js,
-      // pero en vez de file-input usa directamente la variable files...
-      // Ejemplo mínimo:
-      const lista = document.getElementById("lista-archivos");
-      files.forEach(f => {
-        const li = document.createElement("li");
-        li.textContent = f.name + " (" + Math.round(f.size/1024) + "KB)";
-        lista.appendChild(li);
-      });
-      // luego tu código para procesar con el botón btn-process...
-    `;
-    document.body.appendChild(script);
-
-  } catch (e) {
-    console.error(e);
-    alert('No pude cargar la sección de subida.');
-  }
 }
-
-// 2) engancha tu drop y click hero
-const heroDrop = document.getElementById('drop-area');
-heroDrop.addEventListener('click', () => {
-  // simula un file-input para que el usuario elija
-  const inp = document.createElement('input');
-  inp.type = 'file';
-  inp.multiple = true;
-  inp.accept = 'image/*,application/pdf';
-  inp.onchange = () => irAPaginaUpload(Array.from(inp.files));
-  inp.click();
-});
-heroDrop.addEventListener('dragover', e => {
-  e.preventDefault();
-  heroDrop.classList.add('dragging');
-});
-heroDrop.addEventListener('dragleave', () => {
-  heroDrop.classList.remove('dragging');
-});
-heroDrop.addEventListener('drop', e => {
-  e.preventDefault();
-  heroDrop.classList.remove('dragging');
-  if (e.dataTransfer.files.length) {
-    irAPaginaUpload(Array.from(e.dataTransfer.files));
-  }
-});
