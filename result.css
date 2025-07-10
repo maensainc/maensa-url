@@ -272,3 +272,47 @@ button:disabled {
   margin-top: 40px;
   font-size: 0.9rem;
 }
+
+/* ===== Mobile-only nav adjustments (pégalo al final) ===== */
+@media (max-width: 600px) {
+  /* 1) Oculta el menú principal y muestra solo avatar */
+  .inicio_de_sesion ul {
+    display: none;
+  }
+
+  /* 2) Header permita overflow para el dropdown */
+  .header {
+    overflow: visible;
+  }
+
+  /* 3) Ajusta el avatar dentro del header */
+  .menu-usuario {
+    position: relative;
+    margin-right: 1rem;
+    z-index: 2000;
+  }
+
+  /* 4) Posiciona el dropdown justo debajo del avatar */
+  .menu-desplegable {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    min-width: 160px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border-radius: 6px;
+    display: none;
+  }
+  .menu-usuario.activo .menu-desplegable {
+    display: block;
+  }
+
+  /* 5) Hacer cada enlace full-width para tocar fácil */
+  .menu-desplegable a {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 16px;
+  }
+}

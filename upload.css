@@ -351,3 +351,47 @@ footer {
 .logo img {
   height: 65px;
 }
+
+/* ===== Mobile-only nav adjustments (pégalo al final) ===== */
+@media (max-width: 600px) {
+  /* 1) Oculta el menú principal (enlaces) */
+  .inicio_de_sesion ul {
+    display: none;
+  }
+
+  /* 2) Permite overflow en el header para dropdown */
+  .header {
+    overflow: visible;
+  }
+
+  /* 3) Ajusta el contenedor del avatar */
+  .menu-usuario {
+    position: relative;
+    margin-right: 1rem;
+    z-index: 2000;
+  }
+
+  /* 4) Posiciona el dropdown justo debajo del avatar */
+  .menu-desplegable {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    min-width: 160px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border-radius: 6px;
+    display: none;
+  }
+  .menu-usuario.activo .menu-desplegable {
+    display: block;
+  }
+
+  /* 5) Haz que los enlaces ocupen todo el ancho para mejor usabilidad táctil */
+  .menu-desplegable a {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: .75rem 1rem;
+  }
+}
