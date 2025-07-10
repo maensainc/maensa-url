@@ -391,4 +391,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Botón reenviar código (registro)
   updateResendButton();
+  if (!raw) return;
+  let usuario;
+  try {
+    usuario = JSON.parse(raw);
+  } catch (e) {
+    console.warn("No pude parsear usuario:", e);
+    return;
+  }
+  const planActivo = usuario.plan;
+  if (!planActivo) return;
+
+  // 2. Busco la tarjeta que tenga data-plan igual al plan del usuario
+  const tarjeta = document.querySelector(`.plan-card[data-plan="${planActivo}"]`);
+  if (!tarjeta) return;
+
+  // 3. Le agrego una clase para estilos especiales
+  tarjeta.classList.add("activo");
+
+  // 4. Cambio el texto del botón y lo deshabilito
+  const btn = tarjeta.querySelector(".btn-contratar");
+  if (btn) {
+    btn.textContent = "Activo";
+    btn.disabled = true;
+  }
 });

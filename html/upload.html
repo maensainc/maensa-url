@@ -51,6 +51,7 @@
       </label>
 
       <div id="previews"></div>
+      <ul id="lista-archivos" class="lista-archivos"></ul>
       <button id="btn-process" disabled>Procesar recibos</button>
     </section>
 
@@ -63,7 +64,22 @@
   <footer>
     <p>© 2025 Maensa. Todos los derechos reservados.</p>
   </footer>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const meta = sessionStorage.getItem("pendingFilesMeta");
+    if (!meta || !window.__PENDING_FILES__) return;
 
+    const files = window.__PENDING_FILES__;
+    const lista = document.getElementById("lista-archivos");
+    files.forEach(f => {
+      const li = document.createElement("li");
+      li.textContent = `${f.name} (${Math.round(f.size/1024)} KB)`;
+      lista.appendChild(li);
+    });
+    // opcionalmente limpias el storage
+    sessionStorage.removeItem("pendingFilesMeta");
+  });
+</script>
   <script src="../js/planes.js"></script>
   <script>
   (function(){
@@ -213,5 +229,6 @@
     });
   })();
   </script>
+
 </body>
 </html>

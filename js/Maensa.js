@@ -336,45 +336,8 @@ document.querySelectorAll(".faq-pregunta").forEach(btn => {
 });
 
 // ==============================
-// DRAG & DROP
+// DRAG & DROP + REDIRECCIÓN
 // ==============================
-const dropArea  = document.getElementById("drop-area");
-const fileInput = document.getElementById("fileElem");
-
-dropArea.addEventListener("click", () => fileInput.click());
-dropArea.addEventListener("dragover", e => {
-  e.preventDefault();
-  dropArea.style.backgroundColor = "#fff0f6";
-});
-dropArea.addEventListener("dragleave", () => {
-  dropArea.style.backgroundColor = "#ffffff";
-});
-dropArea.addEventListener("drop", e => {
-  e.preventDefault();
-  dropArea.style.backgroundColor = "#ffffff";
-  if (!validarSesionYPlan()) return;
-  console.log("Archivos arrastrados:", [...e.dataTransfer.files]);
-});
-fileInput.addEventListener("change", () => {
-  if (!validarSesionYPlan()) return;
-  console.log("Archivos seleccionados:", [...fileInput.files]);
-});
-
-function validarSesionYPlan() {
-  const u = localStorage.getItem("usuario");
-  if (!u) {
-    alert("Debés iniciar sesión para continuar.");
-    mostrarRegistro();
-    return false;
-  }
-  const usuario = JSON.parse(u);
-  if (!usuario.plan || usuario.plan === "basico") {
-    alert("Necesitás un plan activo para continuar.");
-    mostrarRegistro();
-    return false;
-  }
-  return true;
-}
 
 // ==============================
 // SCROLL SUAVE
@@ -431,54 +394,122 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-  const inputs = Array.from(document.querySelectorAll('.codigo-input'));
-  const btnVerificar = document.getElementById('btn-verificar');
+document.addEventListener("DOMContentLoaded", () => {
+  const dropArea = document.getElementById("drop-area");
+  const fileElem = document.getElementById("fileElem");
+  if (!dropArea || !fileElem) {
+    console.error("drop-area o fileElem no encontrado");
+    return;
+  }
 
-  // Auto-avance y backspace
-  inputs.forEach((input, idx) => {
-    input.addEventListener('input', () => {
-      input.value = input.value.toUpperCase().replace(/[^0-9A-Z]/, '');
-      if (input.value && idx < inputs.length - 1) {
-        inputs[idx + 1].focus();
-      }
-    });
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Backspace' && !input.value && idx > 0) {
-        inputs[idx - 1].focus();
-      }
-    });
+  async function manejarArchivos(files) {
+    const raw = localStorage.getItem("usuario");
+    if (!raw) return mostrarLogin();
+    const u = JSON.parse(raw);
+    if (!u.plan || u.plan === "basico") {
+      return void (window.location.href = "planel.html");
+    }
+
+    // guardo metadata + archivos
+    sessionStorage.setItem(
+      "pendingFilesMeta",
+      JSON.stringify(Array.from(files).map(f => ({ name: f.name, size: f.size })))
+    );
+    window.__PENDING_FILES__ = files;
+
+    console.log("→ Subiendo", files.length, "archivos");
+    window.location.href = "upload.html";
+  }
+
+  dropArea.addEventListener("click", e => {
+    e.preventDefault(); 
+    const raw = localStorage.getItem("usuario");
+    if (!raw) return mostrarLogin();
+    const u = JSON.parse(raw);
+    if (!u.plan || u.plan === "basico") {
+      return void (window.location.href = "planel.html");
+    }
+    fileElem.click();
   });
 
-  btnVerificar.addEventListener('click', () => {
-    // Concatenar los 6 valores
-    const codigo = inputs.map(i => i.value).join('');
-    console.log('🔍 Código a verificar:', codigo);
-    if (codigo.length !== 6) {
-      return alert('Por favor completa los 6 dígitos del código.');
-    }
-    // Envía al backend
-    verificarCodigoCon(codigo);
+  fileElem.addEventListener("change", () => {
+    if (fileElem.files.length) manejarArchivos(fileElem.files);
+  });
+
+  dropArea.addEventListener("dragover", e => {
+    e.preventDefault();
+    dropArea.classList.add("dragging");
+  });
+  dropArea.addEventListener("dragleave", () => {
+    dropArea.classList.remove("dragging");
+  });
+  dropArea.addEventListener("drop", e => {
+    e.preventDefault();
+    dropArea.classList.remove("dragging");
+    if (e.dataTransfer.files.length) manejarArchivos(e.dataTransfer.files);
   });
 });
 
-// Función de llamada al endpoint
-async function verificarCodigoCon(codigo) {
-  console.log('📧 Email:', registroData.email);
+let pendingFiles = null;
+
+// 1) función para cargar el fragmento de upload
+async function irAPaginaUpload(files) {
   try {
-    const res = await fetch(`${API_BASE}/api/verificar-codigo`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: registroData.email, codigo })
-    });
-    const data = await res.json();
-    console.log('Respuesta verificación:', res.status, data);
-    if (!res.ok) {
-      return alert(data.error || 'Código incorrecto.');
-    }
-    paso3();
-  } catch (err) {
-    console.error('Error de conexión:', err);
-    alert('Error de conexión al verificar código.');
+    // guarda los File para luego procesarlos
+    pendingFiles = files;
+
+    // baja el fragmento HTML
+    const res  = await fetch('upload-fragment.html');
+    const html = await res.text();
+
+    // inyecta en el body (o en un contenedor específico)
+    document.body.innerHTML = html;
+
+    // re-inserta tu lógica de subida (la de planes.js)
+    const script = document.createElement('script');
+    script.textContent = `
+      const files = pendingFiles;
+      // ...copia aquí la lógica de previews y fetch de planes.js,
+      // pero en vez de file-input usa directamente la variable files...
+      // Ejemplo mínimo:
+      const lista = document.getElementById("lista-archivos");
+      files.forEach(f => {
+        const li = document.createElement("li");
+        li.textContent = f.name + " (" + Math.round(f.size/1024) + "KB)";
+        lista.appendChild(li);
+      });
+      // luego tu código para procesar con el botón btn-process...
+    `;
+    document.body.appendChild(script);
+
+  } catch (e) {
+    console.error(e);
+    alert('No pude cargar la sección de subida.');
   }
 }
+
+// 2) engancha tu drop y click hero
+const heroDrop = document.getElementById('drop-area');
+heroDrop.addEventListener('click', () => {
+  // simula un file-input para que el usuario elija
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.multiple = true;
+  inp.accept = 'image/*,application/pdf';
+  inp.onchange = () => irAPaginaUpload(Array.from(inp.files));
+  inp.click();
+});
+heroDrop.addEventListener('dragover', e => {
+  e.preventDefault();
+  heroDrop.classList.add('dragging');
+});
+heroDrop.addEventListener('dragleave', () => {
+  heroDrop.classList.remove('dragging');
+});
+heroDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  heroDrop.classList.remove('dragging');
+  if (e.dataTransfer.files.length) {
+    irAPaginaUpload(Array.from(e.dataTransfer.files));
+  }
+});
