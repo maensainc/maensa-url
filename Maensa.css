@@ -1148,3 +1148,9 @@ html {
   justify-content: flex-end;
 }
 
+.menu-usuario .menu-desplegable {
+  display: none;
+}
+.menu-usuario.activo .menu-desplegable {
+  display: block;
+}

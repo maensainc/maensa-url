@@ -1,16 +1,44 @@
 // planes.js
 const API_BASE = "https://maensa.onrender.com";
 
+// Traduce cada plan a su límite diario de subidas
+function getLimitePorPlan(plan) {
+  switch (plan) {
+    case 'gratis':     return 20;
+    case 'basico':     return 20;
+    case 'intermedio': return 50;
+    case 'pro':        return 100;
+    case 'ilimitado':  return Infinity;
+    default:           return 0;
+  }
+}
+
 // ——————————————
 // Funciones de Modal & Sesión
 // ——————————————
 function loginExitoso(usuario) {
+  // Oculta botones de login/registro
   document.getElementById("btn-login").style.display    = "none";
   document.getElementById("btn-register").style.display = "none";
-  const menu = document.getElementById("menu-usuario-li");
-  menu.classList.remove("hidden");
+
+  // Muestra menú con nombre de usuario
+  const menuLi = document.getElementById("menu-usuario-li");
+  menuLi.classList.remove("hidden");
+  menuLi.classList.remove("activo");
   document.querySelector(".nombre-usuario").textContent =
     `${usuario.nombre} ${usuario.apellido}`;
+
+  // Inicializa contador de subidas diario por usuario
+  const key = `uploadsUsed_${usuario.email}`;
+  const hoy = new Date().toISOString().split('T')[0];
+  let record = JSON.parse(localStorage.getItem(key)) || {};
+  if (record.date !== hoy) {
+    record = { date: hoy, count: 0 };
+    localStorage.setItem(key, JSON.stringify(record));
+  }
+
+  // Guarda objeto usuario
+  localStorage.setItem("usuario", JSON.stringify(usuario));
 }
 
 function cerrarModalLogin() {
@@ -102,7 +130,6 @@ function iniciarCooldown() {
     if (resendCooldown <= 0) clearInterval(resendTimer);
   }, 1000);
 }
-
 function updateResendButton() {
   const btn = document.getElementById("btn-reenviar-codigo");
   if (!btn) return;
@@ -114,7 +141,6 @@ function updateResendButton() {
     btn.textContent = "Reenviar código";
   }
 }
-
 function reenviarCodigo() {
   if (resendCooldown > 0) return;
   iniciarCooldown();
@@ -177,10 +203,6 @@ async function iniciarSesion() {
     if (!res.ok || data.error) {
       return alert(data.error || "Error al iniciar sesión.");
     }
-
-    localStorage.setItem("usuario", JSON.stringify(data.usuario));
-    alert(`¡Bienvenido/a ${data.usuario.nombre}!`);
-    cerrarModalLogin();
     loginExitoso(data.usuario);
   } catch {
     alert("Error de conexión al iniciar sesión.");
@@ -191,7 +213,8 @@ async function iniciarSesion() {
 // Menú usuario
 // ——————————————
 function toggleMenuUsuario() {
-  document.getElementById("menu-usuario-li").classList.toggle("activo");
+  const menuLi = document.getElementById("menu-usuario-li");
+  menuLi.classList.toggle("activo");
 }
 function cerrarSesion() {
   localStorage.removeItem("usuario");
@@ -201,12 +224,12 @@ function cerrarSesion() {
 // ——————————————
 // Compra de planes
 // ——————————————
-document.addEventListener("DOMContentLoaded", () => {
+function bindPlanes() {
   document.querySelectorAll(".plan-card .btn-contratar")
     .forEach(btn => btn.addEventListener("click", async e => {
       e.preventDefault();
       const plan = btn.closest(".plan-card")?.dataset.plan;
-      if (!plan) return console.error("No hay data-plan");
+      if (!plan) return;
 
       if (plan === "gratis") {
         alert(
@@ -216,12 +239,8 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
         usuario.plan = "gratis";
-        usuario.trial = {
-          expiresAt: Date.now() + 24 * 60 * 60 * 1000,
-          limit: 20,
-          used: 0
-        };
         localStorage.setItem("usuario", JSON.stringify(usuario));
+        loginExitoso(usuario);
         return;
       }
 
@@ -232,29 +251,38 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify({ plan })
         });
         const data = await res.json();
+        if (!res.ok) {
+          // Si el backend devolvió un error 4xx/5xx, lo mostramos
+          console.error(`registro-plan error ${res.status}`, data);
+          return alert(data.error || `Error ${res.status}: ${res.statusText}`);
+        }
         if (data.init_point) {
           window.location.href = data.init_point;
         } else {
-          alert(data.error || "No se pudo iniciar el pago.");
+          console.error("Sin init_point:", data);
+          alert("No se recibió URL de pago. Contactá al admin.");
         }
       } catch (err) {
-        console.error("Error iniciando pago:", err);
+        console.error("Fetch error:", err);
         alert("Error de conexión al iniciar el pago.");
       }
     }));
-});
+}
 
 // ——————————————
-// Renderizado de tabla de “Resultados de Receipts”
+// Renderizado de resultados
 // ——————————————
-document.addEventListener("DOMContentLoaded", () => {
+function renderResultsTable() {
+  const table = document.getElementById("results-table");
+  if (!table) return;
+
   const data = JSON.parse(localStorage.getItem("receiptResult") || "[]");
   if (!data.length) {
     alert("No hay datos para mostrar.");
-    return window.location.href = "upload.html";
+    window.location.href = "upload.html";
+    return;
   }
 
-  // Definimos columnas: key = propiedad del objeto, label = encabezado
   const columns = [
     { key: 'fileName',        label: 'Archivo' },
     { key: 'tipo',            label: 'Tipo' },
@@ -269,41 +297,33 @@ document.addEventListener("DOMContentLoaded", () => {
     { key: 'items',           label: 'Items' },
   ];
 
-  const table = document.getElementById("results-table");
   table.innerHTML = "";
 
-  // Construir <thead>
-  const thead   = document.createElement("thead");
-  const headRow = document.createElement("tr");
-  columns.forEach(col => {
+  const thead = document.createElement("thead");
+  const trH   = document.createElement("tr");
+  columns.forEach(c => {
     const th = document.createElement("th");
-    th.textContent = col.label;
-    headRow.appendChild(th);
+    th.textContent = c.label;
+    trH.appendChild(th);
   });
-  thead.appendChild(headRow);
+  thead.appendChild(trH);
   table.appendChild(thead);
 
-  // Construir <tbody>
   const tbody = document.createElement("tbody");
   data.forEach(row => {
     const tr = document.createElement("tr");
-    columns.forEach(col => {
+    columns.forEach(c => {
       const td = document.createElement("td");
-      let val = row[col.key];
-      if (col.key === 'items' && Array.isArray(val)) {
-        val = val.join("; ");
-      }
-      td.contentEditable = "true";
-      td.textContent     = val != null ? val : "";
-      td.addEventListener("input", () => row[col.key] = td.textContent);
+      let v = row[c.key];
+      if (c.key === 'items' && Array.isArray(v)) v = v.join("; ");
+      td.textContent = v != null ? v : "";
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
   });
   table.appendChild(tbody);
 
-  // Botón CSV
-  document.getElementById("btn-download").addEventListener("click", () => {
+  document.getElementById("btn-download")?.addEventListener("click", () => {
     let csv = columns.map(c => c.label).join(",") + "\n";
     data.forEach(row => {
       csv += columns
@@ -318,19 +338,16 @@ document.addEventListener("DOMContentLoaded", () => {
     a.click();
     URL.revokeObjectURL(url);
   });
-});
+}
 
 // ——————————————
-// Carga inicial común
+// Inicialización global
 // ——————————————
 document.addEventListener("DOMContentLoaded", () => {
+  // Sesión / menú
   const raw = localStorage.getItem("usuario");
-  if (raw) {
-    try { loginExitoso(JSON.parse(raw)); }
-    catch (e) { console.warn("Parse error usuario:", e); }
-  }
+  if (raw) loginExitoso(JSON.parse(raw));
 
-  // Bind botones de sesión y registro
   document.getElementById("btn-login")?.addEventListener("click", e => { e.preventDefault(); mostrarLogin(); });
   document.getElementById("btn-register")?.addEventListener("click", e => { e.preventDefault(); mostrarRegistro(); });
   document.getElementById("btn-iniciar-sesion")?.addEventListener("click", e => { e.preventDefault(); iniciarSesion(); });
@@ -338,14 +355,18 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-usuario")?.addEventListener("click", e => { e.preventDefault(); toggleMenuUsuario(); });
   document.getElementById("cerrar-sesion")?.addEventListener("click", e => { e.preventDefault(); cerrarSesion(); });
 
-  // Cerrar menú clic fuera
   document.addEventListener("click", e => {
-    const menu = document.getElementById("menu-usuario-li");
-    const btn  = document.getElementById("btn-usuario");
-    if (menu && btn && !menu.contains(e.target) && e.target !== btn) {
-      menu.classList.remove("activo");
+    const menuLi  = document.getElementById("menu-usuario-li");
+    const btnUser = document.getElementById("btn-usuario");
+    if (menuLi && btnUser && !menuLi.contains(e.target) && e.target !== btnUser) {
+      menuLi.classList.remove("activo");
     }
   });
 
+  // Planes y resultados
+  bindPlanes();
+  renderResultsTable();
+
+  // Botón reenviar código (registro)
   updateResendButton();
 });

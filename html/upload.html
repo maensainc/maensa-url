@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Subir Recibos</title>
+  <title>Subir archivos</title>
   <link rel="stylesheet" href="../upload.css">
 </head>
 <body>
@@ -15,12 +15,8 @@
     </div>
     <nav class="inicio_de_sesion">
       <ul>
-        <li>
-          <a href="#" id="btn-login" onclick="mostrarLogin(); return false;">Iniciar sesión</a>
-        </li>
-        <li>
-          <a href="#" id="btn-register" onclick="mostrarRegistro(); return false;">Registrarse</a>
-        </li>
+        <li><a href="#" id="btn-login" onclick="mostrarLogin(); return false;">Iniciar sesión</a></li>
+        <li><a href="#" id="btn-register" onclick="mostrarRegistro(); return false;">Registrarse</a></li>
         <li class="menu-usuario hidden" id="menu-usuario-li">
           <a href="#" id="btn-usuario" onclick="toggleMenuUsuario(); return false;">
             <span class="nombre-usuario"></span>
@@ -30,7 +26,7 @@
             <a href="cuenta.html">Cuenta</a>
             <a href="planel.html">Planes</a>
             <a href="upload.html">Subir imágenes</a>
-            <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+            <a href="#" id="cerrar-sesion" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
           </div>
         </li>
       </ul>
@@ -39,41 +35,52 @@
 
   <header><h1>Subir archivos</h1></header>
 
-<main class="main upload-container">
-    <!-- 1) Estado del plan y fotos restantes -->
+  <main class="main upload-container">
+    <!-- Estado del plan y fotos restantes -->
     <div class="status-plan">
       <strong>Plan: </strong><span id="plan-name">—</span><br>
       <strong>Fotos restantes hoy: </strong><span id="plan-remaining">—</span>
     </div>
 
-    <!-- 2) Zona de drop / click -->
+    <!-- Zona de drop / click -->
     <section id="upload-section">
       <label for="file-input" class="dropzone">
         <span class="dropzone-title">Arrastra archivos acá</span><br>
         <span class="dropzone-subtitle">Haz click si no funciona</span>
-        <input type="file"
-               id="file-input"
-               multiple
-               accept="image/*,application/pdf" />
+        <input type="file" id="file-input" multiple accept="image/*,application/pdf" />
       </label>
 
       <div id="previews"></div>
       <button id="btn-process" disabled>Procesar recibos</button>
     </section>
 
-    <!-- 3) Cuenta atrás hasta reinicio -->
+    <!-- Cuenta atrás hasta reinicio -->
     <div class="countdown-container">
       <small>Se restablecen en: <span id="countdown">--:--:--</span></small>
     </div>
   </main>
 
-<footer>
+  <footer>
     <p>© 2025 Maensa. Todos los derechos reservados.</p>
   </footer>
 
-<script src="../js/planes.js"></script>
+  <script src="../js/planes.js"></script>
   <script>
   (function(){
+    const API_BASE = "https://maensa.onrender.com";
+
+    // Función para traducir plan a límite diario
+    function getLimitePorPlan(plan) {
+      switch(plan) {
+        case 'gratis':     return 20;
+        case 'basico':     return 20;
+        case 'intermedio': return 50;
+        case 'pro':        return 100;
+        case 'ilimitado':  return Infinity;
+        default:           return 0;
+      }
+    }
+
     // Lógica de sesión/navbar
     function loginExitoso(usuario) {
       document.getElementById("btn-login").style.display    = "none";
@@ -96,10 +103,16 @@
     document.addEventListener("DOMContentLoaded", ()=>{
       // Autologin
       const raw = localStorage.getItem("usuario");
-      if(raw) try{ loginExitoso(JSON.parse(raw)); }catch{}
-      document.getElementById("btn-usuario")
-        .addEventListener("click",e=>{e.preventDefault(); toggleMenuUsuario();});
-      // click fuera cierra menú
+      let usuario = {};
+      if (raw) {
+        usuario = JSON.parse(raw);
+        loginExitoso(usuario);
+      }
+
+      // MENU
+      document.getElementById("btn-usuario")?.addEventListener("click", e=>{
+        e.preventDefault(); toggleMenuUsuario();
+      });
       document.addEventListener("click", e=>{
         const menuLi = document.getElementById("menu-usuario-li");
         const btn    = document.getElementById("btn-usuario");
@@ -108,88 +121,96 @@
           menuLi.classList.remove("activo");
         }
       });
-    });
 
-    // Lógica de subida y plan
-    const limits = { gratis:20, basico:20, intermedio:50, pro:100, ilimitado:Infinity };
-    const user  = JSON.parse(localStorage.getItem("usuario")||"{}");
-    const plan  = user.plan || "gratis";
-    const limit = limits[plan] ?? 20;
-    const key   = "uploadsUsed";
-    const today = new Date().toISOString().slice(0,10);
-
-    function getUsed(){
-      const o = JSON.parse(localStorage.getItem(key)||"{}");
-      return (o.date===today)?o.count:0;
-    }
-    function setUsed(n){
-      localStorage.setItem(key, JSON.stringify({ date:today, count:n }));
-    }
-
-    const planNameEl  = document.getElementById("plan-name");
-    const remEl       = document.getElementById("plan-remaining");
-    const input       = document.getElementById("file-input");
-    const previews    = document.getElementById("previews");
-    const btn         = document.getElementById("btn-process");
-    const cdEl        = document.getElementById("countdown");
-
-    function updatePlan(){
-      const used = getUsed();
-      const rem = limit===Infinity? "∞" : Math.max(0, limit-used);
-      planNameEl.textContent = plan.charAt(0).toUpperCase()+plan.slice(1);
-      remEl.textContent      = rem + (limit===Infinity? "" : ` / ${limit}`);
-    }
-    updatePlan();
-
-    input.addEventListener("change", ()=>{
-      previews.innerHTML="";
-      const used = getUsed(), rem = Math.max(0, limit-used);
-      const files = Array.from(input.files).slice(0, rem);
-      files.forEach(f=>{
-        const d=document.createElement("div");
-        d.className="preview-item";
-        d.textContent=f.name;
-        previews.appendChild(d);
-      });
-      if(input.files.length>rem) alert(`Solo puedes subir ${rem} fotos hoy.`);
-      btn.disabled = files.length===0;
-      updatePlan();
-    });
-
-    btn.addEventListener("click",async ()=>{
-      const files = Array.from(input.files);
-      if(!files.length) return;
-      const form = new FormData();
-      files.forEach(f=>form.append("files",f));
-      btn.textContent="Procesando…"; btn.disabled=true;
-      try{
-        const res = await fetch("https://maensa.onrender.com/api/receipt-parser",{
-          method:"POST", body: form
-        });
-        const json = await res.json();
-        localStorage.setItem("receiptResult", JSON.stringify(json));
-        setUsed(getUsed()+files.length);
-        location.href="results.html";
-      }catch(e){
-        alert("Error: "+e.message);
-        btn.textContent="Procesar recibos"; btn.disabled=false;
+      // Estado del trial por usuario
+      const key    = `uploads_${usuario.email}`;
+      const today  = new Date().toISOString().split('T')[0];
+      let trial    = JSON.parse(localStorage.getItem(key)) || {};
+      if (trial.date !== today) {
+        trial = {
+          date: today,
+          plan: usuario.plan || 'gratis',
+          limit: getLimitePorPlan(usuario.plan),
+          used: 0
+        };
       }
+      localStorage.setItem(key, JSON.stringify(trial));
+
+      // Mostrar plan y restantes
+      const rem = isFinite(trial.limit)
+        ? trial.limit - trial.used
+        : '∞';
+      document.getElementById("plan-name").textContent      = trial.plan;
+      document.getElementById("plan-remaining").textContent = rem;
+
+      // Contador de subida
+      const input    = document.getElementById("file-input");
+      const previews = document.getElementById("previews");
+      const btn      = document.getElementById("btn-process");
+      let files      = [];
+
+      input.addEventListener("change", ()=>{
+        previews.innerHTML = "";
+        const available = isFinite(trial.limit)
+          ? Math.max(0, trial.limit - trial.used)
+          : Infinity;
+        files = Array.from(input.files).slice(0, available);
+        files.forEach(f=>{
+          const d = document.createElement("div");
+          d.className   = "preview-item";
+          d.textContent = f.name;
+          previews.appendChild(d);
+        });
+        if (input.files.length > available) {
+          alert(`Solo puedes subir ${available} archivos hoy.`);
+        }
+        btn.disabled = files.length === 0;
+      });
+
+      btn.addEventListener("click", async ()=>{
+        if (!files.length) return;
+        btn.textContent = "Procesando…";
+        btn.disabled    = true;
+
+        const form = new FormData();
+        files.forEach(f => form.append('files', f));
+
+        try {
+          const res  = await fetch(`${API_BASE}/api/receipt-parser`, {
+            method:'POST', body: form
+          });
+          const json = await res.json();
+          localStorage.setItem("receiptResult", JSON.stringify(json));
+
+          // Actualizar count
+          trial.used += files.length;
+          localStorage.setItem(key, JSON.stringify(trial));
+
+          // Redirigir
+          window.location.href = "results.html";
+        } catch (e) {
+          alert("Error al procesar: " + e.message);
+          btn.textContent = "Procesar recibos";
+          btn.disabled    = false;
+        }
+      });
+
+      // Countdown a medianoche
+      const cdEl = document.getElementById("countdown");
+      function updateCountdown(){
+        const now = new Date();
+        const tom = new Date(now);
+        tom.setDate(now.getDate()+1);
+        tom.setHours(0,0,0,0);
+        const diff = tom - now;
+        const hh = String(Math.floor(diff/3600000)).padStart(2,'0');
+        const mm = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+        const ss = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+        cdEl.textContent = `${hh}:${mm}:${ss}`;
+      }
+      setInterval(updateCountdown,1000);
+      updateCountdown();
     });
-
-    // Countdown a medianoche
-    function updateCountdown(){
-      const now=new Date();
-      const tom=new Date(now);
-      tom.setDate(now.getDate()+1); tom.setHours(0,0,0,0);
-      const diff=tom-now;
-      const hh=String(Math.floor(diff/3600000)).padStart(2,"0");
-      const mm=String(Math.floor((diff%3600000)/60000)).padStart(2,"0");
-      const ss=String(Math.floor((diff%60000)/1000)).padStart(2,"0");
-      cdEl.textContent=`${hh}:${mm}:${ss}`;
-    }
-    setInterval(updateCountdown,1000);
-    updateCountdown();
-
   })();
   </script>
 </body>
