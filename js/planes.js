@@ -231,18 +231,40 @@ function bindPlanes() {
       const plan = btn.closest(".plan-card")?.dataset.plan;
       if (!plan) return;
 
-      if (plan === "gratis") {
-        alert(
-          "¡Plan Gratis activado!\n\n" +
-          "Tienes 1 día de prueba y hasta 20 archivos de carga.\n" +
-          "Cuando expire o uses las 20 cargas, volverás al plan gratuito deshabilitado."
-        );
-        const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
-        usuario.plan = "gratis";
-        localStorage.setItem("usuario", JSON.stringify(usuario));
-        loginExitoso(usuario);
-        return;
-      }
+if (plan === "gratis") {
+  const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+  if (!usuario.email) {
+    return alert("No se encontró tu sesión. Por favor, inicia sesión de nuevo.");
+  }
+
+  try {
+    const res  = await fetch(`${API_BASE}/api/registro-plan`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan: "gratis", email: usuario.email })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      return alert(data.error || `Error ${res.status}: ${res.statusText}`);
+    }
+
+    // Backend devuelve ok=true y ya actualizó pago_confirmado=1 y bloqueó el email
+    alert("¡Plan Gratis activado y cuenta habilitada con éxito!");
+
+    // Actualizo el usuario en el cliente
+    usuario.plan = "gratis";
+    usuario.pago_confirmado = 1;
+    localStorage.setItem("usuario", JSON.stringify(usuario));
+    loginExitoso(usuario);
+
+  } catch (err) {
+    console.error("Error al activar plan gratis:", err);
+    alert("Error de conexión al activar el plan gratis.");
+  }
+  return;
+}
+
 
       try {
         const res  = await fetch(`${API_BASE}/api/registro-plan`, {
