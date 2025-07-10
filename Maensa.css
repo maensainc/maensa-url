@@ -1155,39 +1155,92 @@ html {
 }
 
 @media (max-width: 600px) {
-  /* 1) Oculta el menu de enlaces y muestra solo avatar */
+  /* Header */
+  .header {
+    padding: 0 10px;
+    height: 60px;
+  }
+  .logo img {
+    height: 50px;
+  }
+  /* Oculta el menú de enlaces y deja solo avatar */
   .inicio_de_sesion ul {
     display: none;
   }
 
-  /* 2) Asegura que el header permita overflow para dropdown */
-  .header {
-    overflow: visible;
-  }
-
-  /* 3) Ajusta el contenedor del avatar */
+  /* Avatar + dropdown */
   .menu-usuario {
     position: relative;
-    margin-right: 1rem; /* un poco de espacio al borde */
-    z-index: 2000;      /* siempre por encima */
+    margin-right: 0.5rem;
+    z-index: 2000;
   }
-
-  /* 4) Dropdown debajo del avatar y centrado */
   .menu-desplegable {
-    position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 5px);
     right: 0;
-    left: auto;
-    min-width: 160px;
-    background: #fff;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    border-radius: 6px;
+    min-width: 140px;
+  }
+  .menu-desplegable a {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
   }
 
-  /* 5) Asegura que cada enlace ocupe todo el ancho */
-  .menu-desplegable a {
-    display: block;
+  /* Main */
+  main {
+    padding: 20px 10px;
+    margin-top: 60px;
+  }
+
+  /* Section boxes */
+  .section-box {
+    margin: 20px 0;
+    padding: 15px;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 20px;
+  }
+  .hero button {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  /* Plan cards / pilares stack vertical */
+  .planes-pilares {
+    flex-direction: column;
+    gap: 15px;
+  }
+  .pilar-card {
     width: 100%;
-    box-sizing: border-box;
+  }
+
+  /* Carrusel: ajusta altura */
+  .carrusel-slide {
+    padding: 20px 15px;
+  }
+  .carrusel-slide h3 {
+    font-size: 18px;
+  }
+
+  /* Forms & modals */
+  .modal-content,
+  .modal-contenido {
+    width: 90%;
+    padding: 20px;
+  }
+  #login-caja {
+    width: 100%;
+  }
+
+  /* Tablas (upload/resultados) */
+  #results-table,
+  .preview-list {
+    overflow-x: auto;
+  }
+
+  /* Footer más compacto */
+  footer {
+    padding: 10px;
+    font-size: 0.8rem;
   }
 }
