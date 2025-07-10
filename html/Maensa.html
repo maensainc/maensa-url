@@ -129,28 +129,26 @@
   <span class="close" onclick="cerrarModalRegistro(); return false;">&times;</span>
   <h2>Verificá tu correo</h2>
   <p>Ingresá el código de 6 dígitos que te enviamos:</p>
-  <input
-    type="text"
-    id="codigo-verificacion"
-    maxlength="6"
-    placeholder="Código de verificación"
-  />
+
+  <div class="codigo-container">
+    <!-- Seis inputs de un carácter -->
+    <input type="text" maxlength="1" class="codigo-input" id="c-1" />
+    <input type="text" maxlength="1" class="codigo-input" id="c-2" />
+    <input type="text" maxlength="1" class="codigo-input" id="c-3" />
+    <input type="text" maxlength="1" class="codigo-input" id="c-4" />
+    <input type="text" maxlength="1" class="codigo-input" id="c-5" />
+    <input type="text" maxlength="1" class="codigo-input" id="c-6" />
+  </div>
+
   <div class="verificacion-acciones">
-    <button onclick="verificarCodigo(); return false;">
-      Verificar
-    </button>
-    <!-- Nuevo botón de reenvío -->
-    <button id="btn-reenviar-codigo" type="button" onclick="reenviarCodigo(); return false;">
-      Reenviar código
-    </button>
+    <button id="btn-verificar">Verificar</button>
+    <button id="btn-reenviar-codigo" type="button">Reenviar código</button>
   </div>
   <p class="reenvio-info">
     Si no recibiste el mail, podés reenviarlo cada 30 segundos.
   </p>
   <p>
-    <a href="#" onclick="volverAPaso1(); return false;">
-      ← Volver
-    </a>
+    <a href="#" onclick="volverAPaso1(); return false;">← Volver</a>
   </p>
 </div>
 

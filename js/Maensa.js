@@ -430,3 +430,55 @@ window.addEventListener("DOMContentLoaded", () => {
     updateResendButton();
   }
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const inputs = Array.from(document.querySelectorAll('.codigo-input'));
+  const btnVerificar = document.getElementById('btn-verificar');
+
+  // Auto-avance y backspace
+  inputs.forEach((input, idx) => {
+    input.addEventListener('input', () => {
+      input.value = input.value.toUpperCase().replace(/[^0-9A-Z]/, '');
+      if (input.value && idx < inputs.length - 1) {
+        inputs[idx + 1].focus();
+      }
+    });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !input.value && idx > 0) {
+        inputs[idx - 1].focus();
+      }
+    });
+  });
+
+  btnVerificar.addEventListener('click', () => {
+    // Concatenar los 6 valores
+    const codigo = inputs.map(i => i.value).join('');
+    console.log('🔍 Código a verificar:', codigo);
+    if (codigo.length !== 6) {
+      return alert('Por favor completa los 6 dígitos del código.');
+    }
+    // Envía al backend
+    verificarCodigoCon(codigo);
+  });
+});
+
+// Función de llamada al endpoint
+async function verificarCodigoCon(codigo) {
+  console.log('📧 Email:', registroData.email);
+  try {
+    const res = await fetch(`${API_BASE}/api/verificar-codigo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: registroData.email, codigo })
+    });
+    const data = await res.json();
+    console.log('Respuesta verificación:', res.status, data);
+    if (!res.ok) {
+      return alert(data.error || 'Código incorrecto.');
+    }
+    paso3();
+  } catch (err) {
+    console.error('Error de conexión:', err);
+    alert('Error de conexión al verificar código.');
+  }
+}
