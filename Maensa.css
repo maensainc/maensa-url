@@ -301,7 +301,6 @@ footer {
 .menu-desplegable {
   position: absolute;
   top: 65px;
-  right: -20px;
   background-color: white;
   border: 1px solid #ccc;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -1153,4 +1152,42 @@ html {
 }
 .menu-usuario.activo .menu-desplegable {
   display: block;
+}
+
+@media (max-width: 600px) {
+  /* 1) Oculta el menu de enlaces y muestra solo avatar */
+  .inicio_de_sesion ul {
+    display: none;
+  }
+
+  /* 2) Asegura que el header permita overflow para dropdown */
+  .header {
+    overflow: visible;
+  }
+
+  /* 3) Ajusta el contenedor del avatar */
+  .menu-usuario {
+    position: relative;
+    margin-right: 1rem; /* un poco de espacio al borde */
+    z-index: 2000;      /* siempre por encima */
+  }
+
+  /* 4) Dropdown debajo del avatar y centrado */
+  .menu-desplegable {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    min-width: 160px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border-radius: 6px;
+  }
+
+  /* 5) Asegura que cada enlace ocupe todo el ancho */
+  .menu-desplegable a {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
 }
