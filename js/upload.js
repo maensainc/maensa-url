@@ -2,6 +2,7 @@
 
 // ————————————— CONFIGURACIÓN GENERAL —————————————
 const API_BASE = "https://maensa.onrender.com";
+let tablas = [];
 
 // ————————————— UTILS SESIÓN / USUARIO —————————————
 function getUserEmail() {
@@ -48,7 +49,8 @@ async function syncTablasRemotas(arr) {
 }
 
 async function loadTablas() {
-  window.tablas = await fetchTablasRemotas();
+  tablas = await fetchTablasRemotas();
+  return tablas;
 }
 
 function saveTablas(arr) {
@@ -309,37 +311,41 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Procesar recibos
-  document.getElementById("btn-process")?.addEventListener("click", async ()=>{
-    const files = Array.from(fileInput.files);
-    if(!files.length) return alert("Selecciona archivos.");
-    await loadTablas();
-    const activeId = sel.value;
-    const tbl = tablas.find(t=>t.id===activeId);
-    if(!tbl) return alert("Selecciona tabla.");
-    const btn = document.getElementById("btn-process");
-    btn.textContent="Procesando…"; btn.disabled=true;
-    const form = new FormData();
-    files.forEach(f=>form.append("files",f));
-    const res = await fetch(`${API_BASE}/api/receipt-parser`, {
-      method:"POST",
-      headers:{"x-user-email":getUserEmail()},
-      body: form
-    });
-    if(!res.ok) {
-      const e = await res.json();
-      alert(e.error||"Error procesando");
-      btn.textContent="Procesar recibos"; btn.disabled=false;
-      return;
-    }
-    const parsed = await res.json();
-    await updatePlanStatus(
-      document.getElementById("plan-name"),
-      document.getElementById("plan-remaining"),
-      document.getElementById("countdown")
-    );
-    tbl.data = (tbl.data||[]).concat(parsed);
-    tbl.images = files.map(f=>({ name:f.name, url:URL.createObjectURL(f) }));
-    saveTablas(tablas);
-    window.location.href = `results.html?tableId=${encodeURIComponent(activeId)}`;
+  document.getElementById("btn-process")?.addEventListener("click", async () => {
+  const files = Array.from(fileInput.files);
+  if (!files.length) return alert("Selecciona archivos.");
+
+  // 1) Cargar tablas y asignar a la variable tablas
+  await loadTablas();  
+
+  // 2) Tomar el ID de la select
+  const selectedId = document.getElementById("table-select").value;
+  const tbl = tablas.find(t => t.id === selectedId);
+  if (!tbl) return alert("Selecciona una tabla destino.");
+
+  // 3) Preparar FormData y enviar al parser
+  const form = new FormData();
+  files.forEach(f => form.append("files", f));
+  const res = await fetch(`${API_BASE}/api/receipt-parser`, {
+    method: "POST",
+    headers: { "x-user-email": getUserEmail() },
+    body: form
   });
+  if (!res.ok) {
+    const e = await res.json();
+    return alert(e.error || "Error procesando");
+  }
+  const parsed = await res.json();
+
+  // 4) **Asignar** los datos parseados en la tabla
+  tbl.data = (tbl.data || []).concat(parsed);
+  // (Opcional) también actualizar imágenes si haces preview:
+  tbl.images = files.map(f => ({ name: f.name, url: URL.createObjectURL(f) }));
+
+  // 5) Guardar local + remoto
+  saveTablas(tablas);
+
+  // 6) Redirigir a resultados
+  window.location.href = `results.html?tableId=${encodeURIComponent(selectedId)}`;
+});
 });

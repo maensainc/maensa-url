@@ -151,18 +151,49 @@ function renderActiveTable() {
 }
 
 // — Manejo de selección de archivos para preview —
-function handleFilesSelected(e) {
+async function handleFilesSelected(e) {
   const files = Array.from(e.target.files);
+  if (!files.length || !activeId) return;
+
   const tab = tablas.find(t => t.id === activeId);
   if (!tab) return;
-  files.forEach(f => {
-    const url = URL.createObjectURL(f);
-    tab.images.push(url);
-  });
-  saveTablas(tablas);
-  renderActiveTable();
-  fileInput.value = '';
+
+  const form = new FormData();
+  files.forEach(f => form.append('files', f));
+
+  try {
+    const res = await fetch(`${API_BASE}/api/receipt-parser`, {
+      method: 'POST',
+      headers: {
+        'x-user-email': getUserEmail(),
+      },
+      body: form
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      return console.error('Error parser:', err);
+    }
+
+    const parsed = await res.json();
+    console.log('Resultado parseo:', parsed);
+
+    tab.data = parsed;
+
+    saveTablas(tablas);
+
+    fileInput.value = '';
+    if (isResults) {
+      renderDataTable(tab.data);
+    } else {
+      window.location.href = `results.html?tableId=${activeId}`;
+    }
+
+  } catch (err) {
+    console.error('Error de red al parsear recibos:', err);
+  }
 }
+
 
 // — Render en results.html: tabla de datos —
 function renderDataTable(data) {
