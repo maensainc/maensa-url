@@ -22,6 +22,21 @@ let countdownTimer;
 let registroData = {};
 let resendCooldown = 0, resendTimer;
 
+
+function getUserEmail() {
+  const raw = localStorage.getItem('usuario');
+  if (!raw) return null;
+  try { return JSON.parse(raw).email; }
+  catch { return null; }
+}
+
+// Devuelve la clave donde guardamos las tablas de ESTE usuario
+function getTablesKey() {
+  const email = getUserEmail();
+  return email
+    ? `misTablas_${email}`
+    : 'misTablas_guest';
+}
 // ————— Helpers de tiempo —————
 function formatTime(sec) {
   const h = Math.floor(sec/3600).toString().padStart(2,'0');
@@ -45,12 +60,21 @@ function startCountdown() {
   countdownTimer = setInterval(tick, 1000);
 }
 
+function getTablesKey() {
+  const email = getUserEmail();
+  return email
+    ? `misTablas_${email}`
+    : 'misTablas_guest';
+}
+
 function loadTablas() {
-  window.tablas = JSON.parse(localStorage.getItem("misTablas") || "[]");
+  return JSON.parse(localStorage.getItem(getTablesKey()) || '[]');
 }
 function saveTablas() {
-  localStorage.setItem("misTablas", JSON.stringify(window.tablas));
+  localStorage.setItem(getTablesKey(), JSON.stringify(window.tablas));
 }
+
+
 function populateTableSelect() {
   const sel = document.getElementById("table-select");
   sel.innerHTML = "";
@@ -69,22 +93,8 @@ function getTablaActiva() {
   return window.tablas.find(t => t.id === document.getElementById("table-select").value);
 }
 
-function renderPreviews() {
-  const PREVIEWS = document.getElementById("previews");
-  PREVIEWS.innerHTML = "";
-  const tbl = getTablaActiva();
-  if (!tbl) return;
-  tbl.images.forEach(src => {
-    const img = document.createElement("img");
-    img.src       = src;
-    img.className = "preview-item";
-    PREVIEWS.appendChild(img);
-  });
-}
 
-// Cuando el usuario cambie de tabla en el selector, refrescá previews:
-document.getElementById("table-select")
-        .addEventListener("change", renderPreviews);
+
 
 function getRemainingByPlan(plan) {
   switch (plan) {
@@ -95,9 +105,6 @@ function getRemainingByPlan(plan) {
     case 'ilimitado':  return '∞';
     default:           return '—';
   }
-}
-function saveTablas() {
-  localStorage.setItem("misTablas", JSON.stringify(window.tablas));
 }
 
 function ensureRemainingUploads() {
@@ -377,19 +384,6 @@ function renderPreviews() {
 // — Select de tabla cambia —
 document.getElementById("table-select").addEventListener("change", renderPreviews);
 
-// — Al elegir nuevos archivos, solo deshabilita/habilita el botón y muestra nombres —
-document.getElementById("file-input").addEventListener("change", e => {
-  const files = Array.from(e.target.files);
-  const PREVIEWS = document.getElementById("previews");
-  PREVIEWS.innerHTML = "";
-  files.forEach(f => {
-    const d = document.createElement("div");
-    d.className = "preview-item";
-    d.textContent = f.name;
-    PREVIEWS.appendChild(d);
-  });
-  document.getElementById("btn-process").disabled = files.length === 0;
-});
 
 // — Procesar recibos: sube al backend y además guarda en la tabla local —
 document.getElementById("btn-process").addEventListener("click", async () => {
@@ -422,6 +416,7 @@ document.getElementById("btn-process").addEventListener("click", async () => {
   const parsedData = await res.json();
   await updatePlanStatus();
 
+
   // — Guardar miniaturas base64
   tbl.images = [];
   for (let f of files) {
@@ -433,14 +428,48 @@ document.getElementById("btn-process").addEventListener("click", async () => {
     tbl.images.push(dataUrl);
   }
 
-  // — 🔧 CAMBIO: guardar también el resultado del parser
-  tbl.data = parsedData;
+tbl.data = (tbl.data || []).concat(parsedData);
+saveTablas();
 
-  saveTablas();
+const tableId = encodeURIComponent(tbl.id);
+window.location.href = `results.html?tableId=${tableId}`;
+});
 
-  // — 🔧 CAMBIO: redirigir incluyendo el ID de la tabla
-  const tableId = encodeURIComponent(tbl.id);
-  window.location.href = `results.html?tableId=${tableId}`;
+// upload.js
+
+// Elementos DOM
+const fileInput      = document.getElementById("file-input");
+const previewContainer = document.getElementById("previews");
+const btnProcess     = document.getElementById("btn-process");
+
+// Al cambiar la selección de archivos:
+fileInput.addEventListener("change", e => {
+  const files = Array.from(e.target.files);
+
+  // 1) Vaciar previews anteriores
+  previewContainer.innerHTML = "";
+
+  // 2) Por cada archivo, crear un preview-item
+  files.forEach(file => {
+    const div = document.createElement("div");
+    div.className = "preview-item";
+
+    if (file.type.startsWith("image/")) {
+      // miniatura para imágenes
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(file);
+      img.onload = () => URL.revokeObjectURL(img.src);
+      div.appendChild(img);
+    } else {
+      // nombre de archivo para no-imágenes
+      div.textContent = file.name;
+    }
+
+    previewContainer.appendChild(div);
+  });
+
+  // 3) Habilitar o deshabilitar el botón Procesar
+  btnProcess.disabled = files.length === 0;
 });
 
 
@@ -449,18 +478,52 @@ document.getElementById("btn-process").addEventListener("click", async () => {
 document.addEventListener('DOMContentLoaded', () => {
   // 1) Sesión / plan
   const raw = localStorage.getItem('usuario');
-  if (raw) {
-    loginExitoso(JSON.parse(raw));
-    updatePlanStatus();
-  } else {
-    updatePlanStatus();
+  if (raw) loginExitoso(JSON.parse(raw));
+  else updatePlanStatus();
+
+window.tablas = loadTablas();
++opulateTableSelect();
+
+// —––––––— PRE-SELECCIÓN según query param —––––––—
+const urlId = new URLSearchParams(window.location.search).get('tableId');
+if (urlId) {
+  const sel = document.getElementById('table-select');
+  if ([…sel.options].some(o => o.value === urlId)) {
+    sel.value = urlId;
   }
+}
+// Renderiza miniaturas de esa tabla (si quieres)
+renderPreviews();
+  // — NO llamamos renderPreviews() aquí —
 
-  // 2) CARGAR Y POBLAR TUS TABLAS
-  loadTablas();
-  populateTableSelect();
-  renderPreviews();
-
+  // 3) Botones de auth (login / registro)
   bindAuthButtons();
-  // ya no necesitas bindUploadLogic()
+
+  // 4) Mostrar sólo previews de los archivos que seleccionas:
+  const fileInput        = document.getElementById("file-input");
+  const previewContainer = document.getElementById("previews");
+  const btnProcess       = document.getElementById("btn-process");
+
+  fileInput.addEventListener("change", e => {
+    const files = Array.from(e.target.files);
+    // Vaciar previews anteriores
+    previewContainer.innerHTML = "";
+    // Por cada archivo, miniatura o nombre
+    files.forEach(file => {
+      const div = document.createElement("div");
+      div.className = "preview-item";
+      if (file.type.startsWith("image/")) {
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        img.onload = () => URL.revokeObjectURL(img.src);
+        div.appendChild(img);
+      } else {
+        div.textContent = file.name;
+      }
+      previewContainer.appendChild(div);
+    });
+    btnProcess.disabled = files.length === 0;
+  });
+
 });
+

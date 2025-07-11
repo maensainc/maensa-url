@@ -1,124 +1,205 @@
 // tables.js
 
 // — Helpers —
-// Leer un parámetro de querystring
+// Leer un parámetro de querystring (soporta `?id=` y `?tableId=`)
 function getQueryParam(name) {
   const params = new URLSearchParams(window.location.search);
   return params.get(name);
 }
 
-// — Selectores —
-const SIDEBAR_LIST = document.getElementById('table-list');
-const BTN_NEW      = document.getElementById('btn-new-table');
-const TABLE_TITLE  = document.getElementById('table-title');
-const BTN_UPLOAD   = document.getElementById('btn-upload-images');
-const IMG_LIST     = document.getElementById('images-list');
-const FILE_INPUT   = document.getElementById('file-input');
+// Renderiza un array de objetos como tabla HTML (para results.html)
+function renderDataTable(data) {
+  const container = document.getElementById('data-table');
+  if (!container) return;
+  if (!data || !data.length) {
+    container.textContent = 'No hay datos para mostrar.';
+    return;
+  }
 
-let tablas = [];   // Array de { id, name, images: [...], data: ... }
-let activeId = null;
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
 
-// — Utilities —
-function save() {
-  localStorage.setItem('misTablas', JSON.stringify(tablas));
+  Object.keys(data[0]).forEach(key => {
+    const th = document.createElement('th');
+    th.textContent = key;
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  data.forEach(item => {
+    const tr = document.createElement('tr');
+    Object.values(item).forEach(val => {
+      const td = document.createElement('td');
+      td.textContent = Array.isArray(val) ? val.join(', ') : val;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+
+  container.innerHTML = '';
+  container.appendChild(table);
 }
+
+// — Selectores & estado —
+const SIDEBAR_LIST    = document.getElementById('table-list');
+const BTN_NEW         = document.getElementById('btn-new-table');
+const TABLE_TITLE     = document.getElementById('table-title');
+const BTN_UPLOAD      = document.getElementById('btn-upload-images');
+const BTN_DELETE      = document.getElementById('btn-delete-table');
+const IMG_LIST        = document.getElementById('images-list');
+const FILE_INPUT      = document.getElementById('file-input');
+
+let tablas   = [];   // Array de { id, name, images: [...], data: [...] }
+let activeId = null; // id de la tabla seleccionada
+
+function getUserEmail() {
+  const raw = localStorage.getItem('usuario');
+  if (!raw) return null;
+  try { return JSON.parse(raw).email; }
+  catch { return null; }
+}
+
+// Devuelve la clave donde guardamos las tablas de ESTE usuario
+function getTablesKey() {
+  const email = getUserEmail();
+  return email
+    ? `misTablas_${email}`
+    : 'misTablas_guest';
+}
+
+
 function load() {
-  const raw = localStorage.getItem('misTablas');
+  const raw = localStorage.getItem(getTablesKey());
   tablas = raw ? JSON.parse(raw) : [];
 }
 
-// — Render sidebar —
+// — Guarda las tablas de ESTE usuario —
+function save() {
+  localStorage.setItem(getTablesKey(), JSON.stringify(tablas));
+}
+
+// — Renderizado de la sidebar —
 function renderSidebar() {
   SIDEBAR_LIST.innerHTML = '';
-  tablas.forEach(tbl => {
+  tablas.forEach(tab => {
     const li = document.createElement('li');
-    li.textContent = tbl.name;
-    li.dataset.id = tbl.id;
-    if (tbl.id === activeId) li.classList.add('active');
-    li.addEventListener('click', () => {
-      activeId = tbl.id;
-      renderSidebar();
-      renderMain();
-    });
+    li.textContent = tab.name;
+    li.dataset.id = tab.id;
+    li.classList.toggle('active', tab.id === activeId);
+    li.addEventListener('click', () => selectTable(tab.id));
     SIDEBAR_LIST.appendChild(li);
   });
 }
 
-// — Render main area —
-function renderMain() {
-  const tbl = tablas.find(t => t.id === activeId);
-  if (!tbl) {
+// — Mostrar la tabla activa en el main (miniaturas) —
+function renderActiveTable() {
+  const tab = tablas.find(t => t.id === activeId);
+  if (!tab) {
     TABLE_TITLE.textContent = '—';
-    BTN_UPLOAD.disabled     = true;
-    IMG_LIST.innerHTML      = '';
+    BTN_UPLOAD.disabled = true;
+    BTN_DELETE.disabled = true;
+    IMG_LIST.innerHTML = '';
     return;
   }
-  // Título
-  TABLE_TITLE.textContent = tbl.name;
-
-  // Botón “Subir imágenes” → upload.html?tableId=…
+  TABLE_TITLE.textContent = tab.name;
   BTN_UPLOAD.disabled = false;
-  BTN_UPLOAD.onclick = () => {
-    window.location.href = `upload.html?tableId=${encodeURIComponent(activeId)}`;
-  };
+  BTN_DELETE.disabled = false;
 
-  // Mostrar miniaturas
   IMG_LIST.innerHTML = '';
-  tbl.images.forEach(src => {
+  tab.images.forEach((src, idx) => {
     const img = document.createElement('img');
     img.src = src;
+    img.alt = `${tab.name} img #${idx+1}`;
     IMG_LIST.appendChild(img);
   });
 }
 
+// — Seleccionar una tabla por id —
+function selectTable(id) {
+  activeId = id;
+  renderSidebar();
+  renderActiveTable();
+  window.history.replaceState(null, '', `?id=${id}`);
+}
+
 // — Crear nueva tabla —
-BTN_NEW.addEventListener('click', () => {
+function createNewTable() {
   const name = prompt('Nombre de la nueva tabla:');
   if (!name) return;
   const id = Date.now().toString();
-  tablas.push({ id, name, images: [], data: null });
-  activeId = id;
+  tablas.push({ id, name, images: [], data: [] });
   save();
-  renderSidebar();
-  renderMain();
-});
+  selectTable(id);
+}
 
-// — Subir imágenes directamente en este panel (solo base64 local) —
-BTN_UPLOAD.addEventListener('click', () => {
-  FILE_INPUT.click();
-});
-FILE_INPUT.addEventListener('change', async () => {
-  if (!activeId) return;
-  const tbl = tablas.find(t => t.id === activeId);
-  const files = Array.from(FILE_INPUT.files);
-  for (let f of files) {
-    const dataUrl = await new Promise(r => {
-      const fr = new FileReader();
-      fr.onload = () => r(fr.result);
-      fr.readAsDataURL(f);
-    });
-    tbl.images.push(dataUrl);
-  }
+// — Subir imágenes (file input) —
+function handleFilesSelected(event) {
+  const files = Array.from(event.target.files);
+  const tab = tablas.find(t => t.id === activeId);
+  if (!tab) return;
+
+  files.forEach(file => {
+    const url = URL.createObjectURL(file);
+    tab.images.push(url);
+  });
+
+  save();
+  renderActiveTable();
   FILE_INPUT.value = '';
+}
+
+// — Eliminar tabla activa —
+function deleteActiveTable() {
+  if (!activeId) return;
+  const tab = tablas.find(t => t.id === activeId);
+  if (!confirm(`¿Eliminar la tabla "${tab.name}" y todas sus imágenes?`)) return;
+  tablas = tablas.filter(t => t.id !== activeId);
+  activeId = null;
   save();
-  renderMain();
-});
+  renderSidebar();
+  renderActiveTable();
+}
 
-// — Inicialización —
-document.addEventListener('DOMContentLoaded', () => {
-  // 1) Cargo tablas guardadas
+// — Inicialización al cargar la página —
+window.addEventListener('DOMContentLoaded', () => {
   load();
+  renderSidebar();
 
-  // 2) Si viene de upload.html?tableId=XXX, uso ese ID
-  const param = getQueryParam('tableId');
-  if (param && tablas.some(t => t.id === param)) {
-    activeId = param;
-  } else {
-    // Si no, tomo la primera tabla (si existe)
-    activeId = tablas.length ? tablas[0].id : null;
+  // Determinar activeId de query params (?id= en tables.html, ?tableId= en results.html)
+  const paramId = getQueryParam('id') || getQueryParam('tableId');
+  if (paramId && tablas.some(t => t.id === paramId)) {
+    activeId = paramId;
+  } else if (tablas.length) {
+    activeId = tablas[0].id;
   }
 
-  // 3) Pinto todo
   renderSidebar();
-  renderMain();
+  renderActiveTable();
+
+  const isResults = !!document.getElementById('data-table');
+
+  // Siempre bind para nueva tabla
+  BTN_NEW.addEventListener('click', createNewTable);
+  // Eliminar tabla en ambas vistas
+  BTN_DELETE.addEventListener('click', deleteActiveTable);
+
+  if (isResults) {
+    // En results.html: ocultar miniaturas, y redirigir subir imágenes
+    IMG_LIST.style.display = 'none';
+    BTN_UPLOAD.textContent = 'Subir imágenes';
+    BTN_UPLOAD.onclick = () => {
+      window.location.href = `upload.html?tableId=${activeId}`;
+    };
+    // Finalmente renderizar tabla de datos parseados
+    const tabla = tablas.find(t => t.id === activeId);
+    renderDataTable(tabla && tabla.data);
+  } else {
+    // En la vista normal: abrir file picker
+    BTN_UPLOAD.addEventListener('click', () => FILE_INPUT.click());
+    FILE_INPUT.addEventListener('change', handleFilesSelected);
+  }
 });
