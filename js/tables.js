@@ -8,7 +8,7 @@ const btnUploadImg = document.getElementById('btn-upload-images');
 const btnDelete    = document.getElementById('btn-delete-table');
 const imgListEl    = document.getElementById('images-list');
 const dataTableEl  = document.getElementById('data-table');
-const fileInput    = document.getElementById('file-input');
+const fileInput    = document.getElementById('table-file-input');
 
 const isResults = !!dataTableEl;
 let tablas   = [];
@@ -51,8 +51,8 @@ async function syncTablasRemotas(arr) {
       },
       body: JSON.stringify(arr)
     });
-  } catch (err) {
-    console.warn('Network error PUT tablas:', err);
+  } catch {
+    console.warn('Network error PUT tablas');
   }
 }
 
@@ -84,8 +84,11 @@ function selectTable(id) {
   localStorage.setItem('ultimaTablaSeleccionada', id);
   renderSidebar();
 
+  const tab = tablas.find(t => t.id === activeId) || { name: '—', data: [] };
+  tableTitleEl.textContent = tab.name;
+
   if (isResults) {
-    renderDataTable(tablas.find(t => t.id === activeId)?.data);
+    renderDataTable(tab.data);
     window.history.replaceState(null, '', `?tableId=${encodeURIComponent(activeId)}`);
   } else {
     renderActiveTable();
@@ -103,13 +106,18 @@ function createNewTable() {
 }
 function deleteActiveTable() {
   if (!activeId) return;
-  if (!confirm(`Eliminar tabla?`)) return;
+  if (!confirm('Eliminar tabla?')) return;
   tablas = tablas.filter(t => t.id !== activeId);
   saveTablas(tablas).then(() => {
     activeId = tablas[0]?.id || null;
     renderSidebar();
-    isResults ? renderDataTable(tablas.find(t => t.id === activeId)?.data)
-              : renderActiveTable();
+    if (isResults) {
+      const tab = tablas.find(t => t.id === activeId) || { name: '—', data: [] };
+      tableTitleEl.textContent = tab.name;
+      renderDataTable(tab.data);
+    } else {
+      renderActiveTable();
+    }
   });
 }
 
@@ -157,8 +165,11 @@ async function handleFilesSelected(e) {
     tab.images = files.map(f => URL.createObjectURL(f));
     await saveTablas(tablas);
 
-    if (isResults) renderDataTable(tab.data);
-    else           window.location.href = `results.html?tableId=${activeId}`;
+    if (isResults) {
+      renderDataTable(tab.data);
+    } else {
+      window.location.href = `results.html?tableId=${activeId}`;
+    }
   } catch (err) {
     console.error('Error parse/subir:', err);
   }
@@ -200,24 +211,27 @@ function renderDataTable(data) {
 window.addEventListener('DOMContentLoaded', async () => {
   await loadTablas();
 
-  // 1) queryString?
+  // Determinar activeId
   const params = new URLSearchParams(window.location.search);
   const key    = isResults ? 'tableId' : 'id';
   const fromQS = params.get(key);
-
-  // 2) localStorage?
   const last   = localStorage.getItem('ultimaTablaSeleccionada');
-
-  // 3) fallback a primera tabla
-  activeId = fromQS ?? (tablas.some(t => t.id === last) ? last : null) ?? tablas[0]?.id ?? null;
+  activeId = fromQS || (tablas.some(t => t.id === last) ? last : null) || tablas[0]?.id || null;
 
   renderSidebar();
-  isResults ? renderDataTable(tablas.find(t => t.id === activeId)?.data)
-            : renderActiveTable();
 
+  // Actualizar título y contenido inicial
+  const initialTab = tablas.find(t => t.id === activeId) || { name: '—', data: [] };
+  tableTitleEl.textContent = initialTab.name;
+  if (isResults) {
+    renderDataTable(initialTab.data);
+  } else {
+    renderActiveTable();
+  }
+
+  // Listeners
   btnNewTable.addEventListener('click', createNewTable);
   btnDelete  .addEventListener('click', deleteActiveTable);
-
   if (!isResults) {
     btnUploadImg.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleFilesSelected);

@@ -175,3 +175,9 @@ body {
 .menu-desplegable{
   right: -20px;
 }
+.status-plan span {
+  color: #000 !important;
+}
+.status-plan #countdown {
+  color: #000 !important;
+}
