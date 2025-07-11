@@ -156,32 +156,29 @@ function volverAPaso1() {
 
 // — Paso 2: verificación de código —
 async function verificarCodigo() {
-  const codigo = document.getElementById("codigo-verificacion").value.trim();
-  if (!codigo) {
-    alert("Ingresá el código de verificación.");
-    return;
+  // Recogemos los 6 dígitos
+  const codeInputs = Array.from(document.querySelectorAll('.codigo-input'));
+  const codigo = codeInputs.map(i => i.value.trim()).join('');
+  if (codigo.length !== codeInputs.length) {
+    return alert("Ingresá los 6 dígitos del código de verificación.");
   }
+
   try {
-    const res  = await fetch(`${API_BASE}/api/verificar-codigo`, {
+    const res = await fetch(`${API_BASE}/api/verificar-codigo`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: registroData.email, codigo }),
     });
     const data = await res.json();
     if (!res.ok || data.error) {
-      alert(data.error || "Código incorrecto.");
-      return;
+      return alert(data.error || "Código incorrecto.");
     }
 
-    // ← Aquí quitamos el paso 3 y redirigimos directamente
     cerrarModalRegistro();
-    // Guarda localStorage si quieres mantener al usuario “logueado” de inmediato
-    registroData.plan = "basico";            // opcional: asigna un plan por defecto
+    registroData.plan = "basico";
     registroData.pago_confirmado = 0;
     registroData.verificado = true;
     localStorage.setItem("usuario", JSON.stringify(registroData));
-
-    // Redirijo inmediatamente a la página de planes
     window.location.href = "planel.html";
 
   } catch (err) {
@@ -283,15 +280,69 @@ async function iniciarSesion() {
 
 // ————— Vinculación en DOMContentLoaded —————
 document.addEventListener('DOMContentLoaded', () => {
+  // 1) Login automático si ya hay usuario
+  const u = localStorage.getItem("usuario");
+  if (u) {
+    try { loginExitoso(JSON.parse(u)); }
+    catch (e) { console.warn("Error parseando usuario:", e); }
+  }
+
+  // 2) Bind de botones de auth
   const btnLogin = document.getElementById("btn-iniciar-sesion");
-  console.log("btnLogin existe?", btnLogin);
   if (btnLogin) {
     btnLogin.addEventListener("click", e => {
       e.preventDefault();
       iniciarSesion();
     });
   }
+  const btnRegister = document.getElementById("btn-register");
+  if (btnRegister) {
+    btnRegister.addEventListener("click", e => {
+      e.preventDefault();
+      mostrarRegistro();
+    });
+  }
+  const btnVerificar = document.getElementById('btn-verificar');
+    if (btnVerificar) {
+      btnVerificar.addEventListener('click', e => {
+        e.preventDefault();
+        verificarCodigo();
+      });
+    }
+
+  // 3) Carrusel, scroll suave, FAQ, etc.
+  reiniciarTimer();
+  AOS.init({ duration: 800, once: true });
+  // …
+
+  // 4) “Comenzar →”
+  const btnComenzar = document.getElementById('btn-comenzar');
+  if (btnComenzar) {
+    btnComenzar.addEventListener('click', e => {
+      e.preventDefault();
+      const rawUser = localStorage.getItem('usuario');
+      if (!rawUser) mostrarRegistro();
+      else window.location.href = 'upload.html';
+    });
+  }
+
+  // 5) — Auto-focus para inputs de código de verificación —
+  const codeInputs = Array.from(document.querySelectorAll('.codigo-input'));
+  codeInputs.forEach((input, idx) => {
+    input.addEventListener('input', () => {
+      if (input.value.length === input.maxLength && idx < codeInputs.length - 1) {
+        codeInputs[idx + 1].focus();
+      }
+    });
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && input.value === '' && idx > 0) {
+        codeInputs[idx - 1].focus();
+      }
+    });
+  });
 });
+
+
 
 function loginExitoso(usuario) {
   document.querySelector('a[onclick="mostrarLogin(); return false;"]').style.display    = "none";

@@ -22,12 +22,13 @@
     <span class="nombre-usuario"></span>
     <img src="../fotos/usuario.png" alt="Usuario" class="icono-usuario"/>
   </a>
-  <div class="menu-desplegable">
-            <a href="cuenta.html">Cuenta</a>
-            <a href="planel.html">Planes</a>
-            <a href="upload.html">Subir imágenes</a>
-            <a href="#" id="cerrar-sesion" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
-          </div>
+<div class="menu-desplegable">
+  <a href="cuenta.html">Cuenta</a>
+  <a href="planel.html">Planes</a>
+  <a href="upload.html">Subir imágenes</a>
+  <a href="results.html">Mis tablas</a>
+  <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
+</div>
         </li>
       </ul>
     </nav>
@@ -110,25 +111,32 @@
   </section>
 
   <!-- MAIN UPLOAD -->
-  <main class="main upload-container">
+ <main class="main upload-container">
     <h1>Subir archivos</h1>
+
     <div class="status-plan">
-      <strong>Plan: </strong><span id="plan-name">—</span><br>
-      <strong>Fotos restantes hoy: </strong><span id="plan-remaining">—</span>
+      <strong>Plan:</strong> <span id="plan-name">—</span><br>
+      <strong>Fotos restantes hoy:</strong> <span id="plan-remaining">—</span><br>
+      <small>Se restablecen en: <span id="countdown">--:--:--</span></small>
     </div>
+
+    <!-- Selector de tabla -->
+    <div class="table-selector">
+      <label for="table-select"><strong>Tabla destino:</strong></label>
+      <select id="table-select"></select>
+    </div>
+
     <section id="upload-section">
       <label class="dropzone">
         <span class="dropzone-title">Arrastra archivos acá</span><br>
-        <span class="dropzone-subtitle">Haz click si no funciona</span>
+        <span class="dropzone-subtitle">O haz click para elegir</span>
         <input type="file" id="file-input" multiple accept="image/*,application/pdf" />
       </label>
-      <div id="previews"></div>
-      <ul id="lista-archivos" class="lista-archivos"></ul>
-      <button id="btn-process" disabled>Procesar recibos</button>
+      <div id="previews" class="preview-list"></div>
+        <button id="btn-process" type="button" disabled class="btn-primary">
+          Procesar recibos
+        </button>
     </section>
-    <div class="countdown-container">
-      <small>Se restablecen en: <span id="countdown">--:--:--</span></small>
-    </div>
   </main>
 
   <footer>
