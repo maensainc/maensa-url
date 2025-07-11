@@ -12,17 +12,27 @@ body {
   font-family: 'Poppins', sans-serif;
   background-color: #f4f4f4;
   color: #333;
-  margin-top: 70px;
+  margin-top: 70px; /* espacio para el header fijo */
 }
 
 /* — CONTENEDOR PRINCIPAL UPLOAD — */
 .upload-container {
   max-width: 800px;
-  margin: 100px auto;
-  background: #fff;
-  padding: 2rem;
+  margin: 100px auto;        /* centrado y separación vertical */
+  background: #ffffff;
+  padding: 4rem 2rem;         /* más padding arriba/abajo */
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;       /* centra todo el contenido */
+}
+
+/* — TÍTULO CENTRADO — */
+.upload-container > h1,
+.upload-container > h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
 }
 
 /* — BLOQUE STATUS-PLAN — */
@@ -32,25 +42,23 @@ body {
   align-items: center;
   padding: 1rem 1.5rem;
   margin-bottom: 1.5rem;
-  background: none;    /* sin fondo */
-  border: none;        /* sin borde */
+  background: none;
+  border: none;
+  width: 100%;
 }
-.status-plan strong {
-  color: #ff4381;       /* rosa */
+.status-plan strong,
+.status-plan span,
+.status-plan small,
+.status-plan #countdown {
+  color: #ff4381 !important;  /* todo en rosa */
   font-size: 1.1rem;
-}
-.status-plan span {
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-/* “Se restablecen en:” en rosa */
-.status-plan small {
-  color: #ff4381;
 }
 
 /* — SELECTOR DE TABLA DESTINO — */
 .table-selector {
-  margin-bottom: 1.5rem;
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 3rem;
 }
 .table-selector label {
   display: block;
@@ -73,18 +81,19 @@ body {
   box-shadow: 0 0 5px rgba(255,67,129,0.4);
 }
 
-/* — DROPZONE: borde negro punteado por defecto, rosa al hover — */
+/* — DROPZONE: borde negro, luego rosa al hover — */
 #upload-section {
-  position: relative;
-  margin-bottom: 100px;
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 2rem;
 }
 .dropzone {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem;
-  border: 3px dashed #000;    /* negro punteado */
+  padding: 4rem;               /* mucho espacio interno */
+  border: 3px dashed #000;     /* negro punteado */
   border-radius: 8px;
   background: transparent;
   cursor: pointer;
@@ -92,7 +101,7 @@ body {
   transition: border-color .3s, box-shadow .3s;
 }
 .dropzone:hover {
-  border-color: #ff4381;      /* pasa a rosa */
+  border-color: #ff4381;       /* rosa al hover */
   animation: pulse 1.5s infinite;
 }
 @keyframes pulse {
@@ -100,9 +109,8 @@ body {
   70%  { box-shadow: 0 0 0 15px rgba(255,67,129,0); }
   100% { box-shadow: 0 0 0 0 rgba(255,67,129,0); }
 }
-/* Emoji o ícono centrado */
 .dropzone::before {
-  content: "📁";
+  content: "📁";               /* emoji de carpeta */
   font-size: 3rem;
   margin-bottom: 1rem;
 }
@@ -126,9 +134,11 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 1rem;
   margin-top: 1rem;
+  width: 100%;
+  max-width: 600px;
 }
 .preview-item {
-  background: #fff;
+  background: #ffffff;
   border: 1px solid #ccc;
   border-radius: 6px;
   padding: 0.75rem;
@@ -142,7 +152,7 @@ body {
 /* — BOTÓN PROCESAR — */
 #btn-process {
   display: block;
-  margin: 1.5rem auto 0;
+  margin: 2rem auto 0;
   padding: 0.75rem 2rem;
   font-size: 1rem;
   font-weight: 600;

@@ -370,6 +370,14 @@ function bindAuthButtons() {
 
 function renderPreviews() {
   const PREVIEWS = document.getElementById("previews");
+  const fileInput = document.getElementById("file-input");
+
+  // 1) Si acabás de seleccionar archivos, salimos
+  if (fileInput.files && fileInput.files.length > 0) {
+    return;
+  }
+
+  // 2) Si no hay archivos nuevos, mostramos las previas antiguas
   PREVIEWS.innerHTML = "";
   const tbl = getTablaActiva();
   if (!tbl) return;
@@ -381,6 +389,13 @@ function renderPreviews() {
   });
 }
 
+document.getElementById("table-select")
+        .addEventListener("change", renderPreviews);
+
+document.addEventListener('DOMContentLoaded', () => {
+  populateTableSelect();
+  renderPreviews();
+});
 // — Select de tabla cambia —
 document.getElementById("table-select").addEventListener("change", renderPreviews);
 
