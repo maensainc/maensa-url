@@ -1,7 +1,8 @@
 // upload.js
 
-// ————————————— CONFIGURACIÓN GENERAL —————————————
+
 const API_BASE = "https://maensa.onrender.com";
+
 let tablas = [];
 
 // ————————————— UTILS SESIÓN / USUARIO —————————————
@@ -34,9 +35,13 @@ async function fetchTablasRemotas() {
 }
 
 async function syncTablasRemotas(arr) {
+  const email = getUserEmail();
+  if (!email) {
+    console.log('🔒 Modo invitado: tablas sólo en localStorage');
+    return;
+  }
   try {
-    const email = getUserEmail();
-    if (!email) throw new Error('No hay email de usuario, no conecto');
+    // Ya sabemos que email existe, no lo redeclaramos ni volvemos a lanzar:
     const res = await fetch(`${API_BASE}/api/tablas`, {
       method: 'PUT',
       headers: {
@@ -55,6 +60,7 @@ async function syncTablasRemotas(arr) {
     alert('No pude conectar con el servidor al guardar la tabla');
   }
 }
+
 
 async function loadTablas() {
   tablas = await fetchTablasRemotas();
@@ -319,9 +325,10 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
 
   // Procesar recibos
-  document.getElementById("btn-process")?.addEventListener("click", async () => {
-  const files = Array.from(fileInput.files);
-  if (!files.length) return alert("Selecciona archivos.");
+  document.getElementById("btn-process").addEventListener("click", async () => {
+    const files = Array.from(fileInput.files);
+    console.log("Archivos seleccionados:", files);
+    if (!files.length) return alert("Selecciona archivos.");
 
   // 1) Cargar tablas y asignar a la variable tablas
   await loadTablas();  
