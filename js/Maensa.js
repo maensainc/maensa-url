@@ -450,6 +450,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  document.querySelectorAll('.modal').forEach(modal => {
+  modal.addEventListener('click', e => {
+    if (e.target === modal) modal.classList.add('hidden');
+  });
+  const content = modal.querySelector('.modal-content');
+  if (content) {
+    content.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const btn = content.querySelector('button:not([disabled])');
+        if (btn) btn.click();
+      }
+    });
+  }
+});
 });
 
 

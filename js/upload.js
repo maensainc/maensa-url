@@ -277,9 +277,9 @@ async function finalizarRegistro() {
 
 // ————————————— EVENTOS Y LÓGICA PRINCIPAL —————————————
 window.addEventListener("DOMContentLoaded", async () => {
-  // Sesión automática
+  // 1) Sesión automática
   const raw = localStorage.getItem("usuario");
-  if(raw) {
+  if (raw) {
     const u = JSON.parse(raw);
     restoreSession(u);
     await updatePlanStatus(
@@ -288,35 +288,45 @@ window.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("countdown")
     );
   }
-    const email = getUserEmail();
+
+  const email = getUserEmail();
   if (!email) {
-    // nadie logueado: lo mandamos al modal/login
-    showModal('modal-login');
+    showModal("modal-login");
     return;
   }
 
-  // Bind auth buttons
-  document.getElementById("btn-login")?.addEventListener("click", e=>{ e.preventDefault(); showModal("modal-login"); });
-  document.getElementById("btn-register")?.addEventListener("click", e=>{ e.preventDefault(); showModal("modal-register"); togglePasos(1); });
-  document.getElementById("btn-iniciar-sesion")?.addEventListener("click", e=>{ e.preventDefault(); iniciarSesion(); });
-  document.getElementById("btn-verificar")?.addEventListener("click", e=>{ e.preventDefault(); verificarCodigo(); });
-  document.getElementById("btn-reenviar-codigo")?.addEventListener("click", e=>{ e.preventDefault(); reenviarCodigo(); });
-  document.getElementById("btn-usuario")?.addEventListener("click", e=>{
-    e.preventDefault();
-    document.getElementById("menu-usuario-li").classList.toggle("activo");
+  // 2) Bind auth & modales
+  document.getElementById("btn-login")?.addEventListener("click", e => { 
+    e.preventDefault(); 
+    showModal("modal-login"); 
   });
-  document.getElementById("btn-cerrar-sesion")?.addEventListener("click", e=>{
-    e.preventDefault();
-    cerrarSesion();
+  document.getElementById("btn-register")?.addEventListener("click", e => { 
+    e.preventDefault(); 
+    showModal("modal-register"); 
+    togglePasos(1); 
+  });
+  document.getElementById("btn-iniciar-sesion")?.addEventListener("click", e => { 
+    e.preventDefault(); 
+    iniciarSesion(); 
+  });
+  document.getElementById("btn-verificar")?.addEventListener("click", e => { 
+    e.preventDefault(); 
+    verificarCodigo(); 
+  });
+  document.getElementById("btn-reenviar-codigo")?.addEventListener("click", e => { 
+    e.preventDefault(); 
+    reenviarCodigo(); 
+  });
+  document.getElementById("btn-usuario")?.addEventListener("click", e => { 
+    e.preventDefault(); 
+    document.getElementById("menu-usuario-li").classList.toggle("activo"); 
+  });
+  document.getElementById("btn-cerrar-sesion")?.addEventListener("click", e => { 
+    e.preventDefault(); 
+    cerrarSesion(); 
   });
 
-  // Registro pasos
-  document.getElementById("registro-paso-1").querySelector("button").addEventListener("click", irAPaso2);
-  document.querySelector('[onclick="volverAPaso1(); return false;"]')?.addEventListener("click", ()=>togglePasos(1));
-  document.querySelector('[onclick="volverAPaso2(); return false;"]')?.addEventListener("click", ()=>togglePasos(2));
-  document.querySelector('[onclick="finalizarRegistro()"]')?.addEventListener("click", finalizarRegistro);
-
-  // Cargar tablas en select
+  // 3) Cargar tablas en el select
   await loadTablas();
   const sel = document.getElementById("table-select");
   tablas.forEach(t => {
@@ -325,62 +335,67 @@ window.addEventListener("DOMContentLoaded", async () => {
     o.textContent = t.name;
     sel.appendChild(o);
   });
-  const last = localStorage.getItem('ultimaTablaSeleccionada');
-    if (last && tablas.some(t => t.id === last)) {
-      sel.value = last;
-    } else if (tablas.length === 1) {
-      sel.value = tablas[0].id;
+  const last = localStorage.getItem("ultimaTablaSeleccionada");
+  if (last && tablas.some(t => t.id === last)) {
+    sel.value = last;
+  } else if (tablas.length === 1) {
+    sel.value = tablas[0].id;
   }
-  // Previsualización
+
+  // 4) Previsualización de archivos
   const fileInput = document.getElementById("upload-file-input");
-  fileInput?.addEventListener("change", ()=>{
+  fileInput?.addEventListener("change", () => {
     const preview = document.getElementById("previews");
-    preview.innerHTML="";
-    Array.from(fileInput.files).forEach(f=>{
-      const d=document.createElement("div");
-      d.className="preview-item"; d.textContent=f.name;
+    preview.innerHTML = "";
+    Array.from(fileInput.files).forEach(f => {
+      const d = document.createElement("div");
+      d.className = "preview-item";
+      d.textContent = f.name;
       preview.appendChild(d);
     });
-    document.getElementById("btn-process").disabled = fileInput.files.length===0;
+    document.getElementById("btn-process").disabled = fileInput.files.length === 0;
   });
 
-  // Procesar recibos
-  document.getElementById("btn-process").addEventListener("click", async () => {
+  // 5) Procesar recibos
+  const btnProcess = document.getElementById("btn-process");
+  btnProcess.addEventListener("click", async () => {
     const files = Array.from(fileInput.files);
-    console.log("Archivos seleccionados:", files);
     if (!files.length) return alert("Selecciona archivos.");
 
-  // 1) Cargar tablas y asignar a la variable tablas
-  await loadTablas();  
+    // Feedback inmediato
+    btnProcess.textContent = "Procesando...";
+    btnProcess.disabled   = true;
 
-  // 2) Tomar el ID de la select
-  const selectedId = document.getElementById("table-select").value;
-  const tbl = tablas.find(t => t.id === selectedId);
-  if (!tbl) return alert("Selecciona una tabla destino.");
+    try {
+      await loadTablas();
+      const selectedId = sel.value;
+      const tbl = tablas.find(t => t.id === selectedId);
+      if (!tbl) throw new Error("Selecciona una tabla destino.");
 
-  // 3) Preparar FormData y enviar al parser
-  const form = new FormData();
-  files.forEach(f => form.append("files", f));
-  const res = await fetch(`${API_BASE}/api/receipt-parser`, {
-    method: "POST",
-    headers: { "x-user-email": getUserEmail() },
-    body: form
+      const form = new FormData();
+      files.forEach(f => form.append("files", f));
+
+      const res = await fetch(`${API_BASE}/api/receipt-parser`, {
+        method: "POST",
+        headers: { "x-user-email": getUserEmail() },
+        body: form
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Error procesando recibos");
+      }
+      const parsed = await res.json();
+
+      tbl.data   = (tbl.data || []).concat(parsed);
+      tbl.images = files.map(f => ({ name: f.name, url: URL.createObjectURL(f) }));
+
+      await saveTablas(tablas);
+      window.location.href = `results.html?tableId=${encodeURIComponent(selectedId)}`;
+    } catch (err) {
+      alert(err.message);
+      console.error(err);
+      btnProcess.textContent = "Procesar recibos";
+      btnProcess.disabled   = false;
+    }
   });
-  if (!res.ok) {
-    const e = await res.json();
-    return alert(e.error || "Error procesando");
-  }
-  const parsed = await res.json();
-
-  // 4) **Asignar** los datos parseados en la tabla
-  tbl.data = (tbl.data || []).concat(parsed);
-  // (Opcional) también actualizar imágenes si haces preview:
-  tbl.images = files.map(f => ({ name: f.name, url: URL.createObjectURL(f) }));
-
-  // 5) Guardar local + remoto
-  await saveTablas(tablas);
-
-  // 6) Redirigir a resultados
-  window.location.href = `results.html?tableId=${encodeURIComponent(selectedId)}`;
-});
 });
