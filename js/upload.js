@@ -35,10 +35,19 @@ async function fetchTablasRemotas() {
 
 async function syncTablasRemotas(arr) {
   try {
-    const res = await fetch(`${API_BASE}/api/tablas`, { method: 'PUT', /*…*/ });
+    const email = getUserEmail();
+    if (!email) throw new Error('No hay email de usuario, no conecto');
+    const res = await fetch(`${API_BASE}/api/tablas`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-email': email
+      },
+      body: JSON.stringify(arr)
+    });
     if (!res.ok) {
-      const err = await res.text();
-      console.error('PUT /api/tablas devolvió', res.status, err);
+      const errText = await res.text();
+      console.error('PUT /api/tablas devolvió', res.status, errText);
       alert(`Error guardando tabla en el servidor: ${res.status}`);
     }
   } catch (err) {
