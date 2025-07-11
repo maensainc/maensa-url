@@ -11,7 +11,6 @@ const dataTableEl  = document.getElementById('data-table');
 const fileInput    = document.getElementById('file-input');
 
 const isResults = !!dataTableEl;
-
 let tablas   = [];
 let activeId = null;
 
@@ -22,67 +21,51 @@ function getUserEmail() {
   try { return JSON.parse(raw).email; }
   catch { return null; }
 }
-
 function getTablesKey() {
   const email = getUserEmail();
   return email ? `misTablas_${email}` : 'misTablas_guest';
 }
 
-// — Persistencia remota con manejo de status錯误 —
+// — Persistencia remota —
 async function fetchTablasRemotas() {
   try {
     const res = await fetch(`${API_BASE}/api/tablas`, {
       headers: { "x-user-email": getUserEmail() }
     });
-    if (!res.ok) {
-      console.error(`GET /api/tablas error: ${res.status} ${res.statusText}`);
-      const raw = localStorage.getItem(getTablesKey());
-      return raw ? JSON.parse(raw) : [];
-    }
+    if (!res.ok) throw new Error(`GET tablas ${res.status}`);
     const data = await res.json();
     localStorage.setItem(getTablesKey(), JSON.stringify(data));
     return data;
-  } catch (err) {
-    console.error('Network error fetching tablas:', err);
+  } catch {
     const raw = localStorage.getItem(getTablesKey());
     return raw ? JSON.parse(raw) : [];
   }
 }
-
 async function syncTablasRemotas(arr) {
-  // 1) Verifica aquí
-  console.log('Tablas (como objeto):', arr);
-  console.log('Tablas (serializado a JSON):', JSON.stringify(arr));
-
   try {
-    const res = await fetch(`${API_BASE}/api/tablas`, {
+    await fetch(`${API_BASE}/api/tablas`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         "x-user-email": getUserEmail()
       },
-      body: JSON.stringify(arr)  // <— aquí debe ir el array de objetos
+      body: JSON.stringify(arr)
     });
-    if (!res.ok) {
-      console.error(`PUT /api/tablas error: ${res.status} ${res.statusText}`);
-    }
   } catch (err) {
-    console.warn('Error de red sincronizando tablas:', err);
+    console.warn('Network error PUT tablas:', err);
   }
 }
-
 
 // — Persistencia local + remota —
 async function loadTablas() {
   tablas = await fetchTablasRemotas();
 }
-
-function saveTablas(arr) {
+async function saveTablas(arr) {
   localStorage.setItem(getTablesKey(), JSON.stringify(arr));
-  syncTablasRemotas(arr);
+  await syncTablasRemotas(arr);
 }
 
-// — Render de la barra lateral —
+// — Render sidebar —
 function renderSidebar() {
   tableListEl.innerHTML = '';
   tablas.forEach(tab => {
@@ -95,47 +78,49 @@ function renderSidebar() {
   });
 }
 
-// — Seleccionar tabla activa y actualizar URL —
+// — Seleccionar tabla activa —
 function selectTable(id) {
   activeId = id;
+  localStorage.setItem('ultimaTablaSeleccionada', id);
   renderSidebar();
-  if (isResults) renderDataTable(tablas.find(t => t.id === activeId)?.data);
-  else           renderActiveTable();
-  const param = isResults ? 'tableId' : 'id';
-  window.history.replaceState(null, '', `?${param}=${encodeURIComponent(activeId)}`);
+
+  if (isResults) {
+    renderDataTable(tablas.find(t => t.id === activeId)?.data);
+    window.history.replaceState(null, '', `?tableId=${encodeURIComponent(activeId)}`);
+  } else {
+    renderActiveTable();
+    window.history.replaceState(null, '', `?id=${encodeURIComponent(activeId)}`);
+  }
 }
 
-// — Crear y eliminar tablas —
+// — Crear / eliminar tablas —
 function createNewTable() {
   const name = prompt('Nombre de la nueva tabla:');
   if (!name) return;
   const id = Date.now().toString();
   tablas.push({ id, name, images: [], data: [] });
-  saveTablas(tablas);
-  selectTable(id);
+  saveTablas(tablas).then(() => selectTable(id));
 }
-
 function deleteActiveTable() {
   if (!activeId) return;
-  const tab = tablas.find(t => t.id === activeId);
-  if (!tab || !confirm(`Eliminar tabla "${tab.name}"?`)) return;
+  if (!confirm(`Eliminar tabla?`)) return;
   tablas = tablas.filter(t => t.id !== activeId);
-  saveTablas(tablas);
-  activeId = tablas[0]?.id || null;
-  renderSidebar();
-  isResults
-    ? renderDataTable(tablas.find(t => t.id === activeId)?.data)
-    : renderActiveTable();
+  saveTablas(tablas).then(() => {
+    activeId = tablas[0]?.id || null;
+    renderSidebar();
+    isResults ? renderDataTable(tablas.find(t => t.id === activeId)?.data)
+              : renderActiveTable();
+  });
 }
 
-// — Render en tables.html: miniaturas —
+// — Render tablas.html —
 function renderActiveTable() {
   const tab = tablas.find(t => t.id === activeId);
   if (!tab) {
     tableTitleEl.textContent = '—';
-    btnUploadImg.disabled    = true;
-    btnDelete.disabled       = true;
-    imgListEl.innerHTML      = '';
+    btnUploadImg.disabled = true;
+    btnDelete.disabled    = true;
+    imgListEl.innerHTML   = '';
     return;
   }
   tableTitleEl.textContent = tab.name;
@@ -150,52 +135,36 @@ function renderActiveTable() {
   });
 }
 
-// — Manejo de selección de archivos para preview —
+// — Preview / parse archivos —
 async function handleFilesSelected(e) {
   const files = Array.from(e.target.files);
   if (!files.length || !activeId) return;
 
   const tab = tablas.find(t => t.id === activeId);
-  if (!tab) return;
-
   const form = new FormData();
   files.forEach(f => form.append('files', f));
 
   try {
     const res = await fetch(`${API_BASE}/api/receipt-parser`, {
       method: 'POST',
-      headers: {
-        'x-user-email': getUserEmail(),
-      },
+      headers: { 'x-user-email': getUserEmail() },
       body: form
     });
-
-    if (!res.ok) {
-      const err = await res.json();
-      return console.error('Error parser:', err);
-    }
-
+    if (!res.ok) throw await res.json();
     const parsed = await res.json();
-    console.log('Resultado parseo:', parsed);
 
-    tab.data = parsed;
+    tab.data   = parsed;
+    tab.images = files.map(f => URL.createObjectURL(f));
+    await saveTablas(tablas);
 
-    saveTablas(tablas);
-
-    fileInput.value = '';
-    if (isResults) {
-      renderDataTable(tab.data);
-    } else {
-      window.location.href = `results.html?tableId=${activeId}`;
-    }
-
+    if (isResults) renderDataTable(tab.data);
+    else           window.location.href = `results.html?tableId=${activeId}`;
   } catch (err) {
-    console.error('Error de red al parsear recibos:', err);
+    console.error('Error parse/subir:', err);
   }
 }
 
-
-// — Render en results.html: tabla de datos —
+// — Render results.html —
 function renderDataTable(data) {
   dataTableEl.innerHTML = '';
   if (!data?.length) {
@@ -205,9 +174,9 @@ function renderDataTable(data) {
   const table = document.createElement('table');
   const thead = document.createElement('thead');
   const headRow = document.createElement('tr');
-  Object.keys(data[0]).forEach(key => {
+  Object.keys(data[0]).forEach(k => {
     const th = document.createElement('th');
-    th.textContent = key;
+    th.textContent = k;
     headRow.appendChild(th);
   });
   thead.appendChild(headRow);
@@ -216,9 +185,9 @@ function renderDataTable(data) {
   const tbody = document.createElement('tbody');
   data.forEach(row => {
     const tr = document.createElement('tr');
-    Object.values(row).forEach(val => {
+    Object.values(row).forEach(v => {
       const td = document.createElement('td');
-      td.textContent = Array.isArray(val) ? val.join(', ') : val;
+      td.textContent = Array.isArray(v) ? v.join(', ') : v;
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
@@ -230,18 +199,27 @@ function renderDataTable(data) {
 // — Inicialización —
 window.addEventListener('DOMContentLoaded', async () => {
   await loadTablas();
+
+  // 1) queryString?
   const params = new URLSearchParams(window.location.search);
   const key    = isResults ? 'tableId' : 'id';
-  activeId     = params.get(key) || tablas[0]?.id || null;
+  const fromQS = params.get(key);
+
+  // 2) localStorage?
+  const last   = localStorage.getItem('ultimaTablaSeleccionada');
+
+  // 3) fallback a primera tabla
+  activeId = fromQS ?? (tablas.some(t => t.id === last) ? last : null) ?? tablas[0]?.id ?? null;
+
   renderSidebar();
-  if (isResults) renderDataTable(tablas.find(t => t.id === activeId)?.data);
-  else           renderActiveTable();
+  isResults ? renderDataTable(tablas.find(t => t.id === activeId)?.data)
+            : renderActiveTable();
 
   btnNewTable.addEventListener('click', createNewTable);
-  btnDelete   .addEventListener('click', deleteActiveTable);
+  btnDelete  .addEventListener('click', deleteActiveTable);
 
   if (!isResults) {
     btnUploadImg.addEventListener('click', () => fileInput.click());
-    fileInput   .addEventListener('change', handleFilesSelected);
+    fileInput.addEventListener('change', handleFilesSelected);
   }
 });

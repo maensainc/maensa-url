@@ -67,9 +67,17 @@ async function loadTablas() {
   return tablas;
 }
 
-function saveTablas(arr) {
+
+// Antes era function saveTablas(…)
+async function saveTablas(arr) {
   localStorage.setItem(getTablesKey(), JSON.stringify(arr));
-  syncTablasRemotas(arr);
+  const email = getUserEmail();
+  if (!email) {
+    alert('Para guardar las tablas en el servidor, primero iniciá sesión.');
+    return;
+  }
+  // <-- esperamos a que termine el PUT:
+  await syncTablasRemotas(arr);
 }
 
 // ————————————— PLAN STATUS —————————————
@@ -280,6 +288,12 @@ window.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("countdown")
     );
   }
+    const email = getUserEmail();
+  if (!email) {
+    // nadie logueado: lo mandamos al modal/login
+    showModal('modal-login');
+    return;
+  }
 
   // Bind auth buttons
   document.getElementById("btn-login")?.addEventListener("click", e=>{ e.preventDefault(); showModal("modal-login"); });
@@ -305,12 +319,18 @@ window.addEventListener("DOMContentLoaded", async () => {
   // Cargar tablas en select
   await loadTablas();
   const sel = document.getElementById("table-select");
-  tablas.forEach(t=>{
-    const o=document.createElement("option");
-    o.value=t.id; o.textContent=t.name;
+  tablas.forEach(t => {
+    const o = document.createElement("option");
+    o.value = t.id;
+    o.textContent = t.name;
     sel.appendChild(o);
   });
-
+  const last = localStorage.getItem('ultimaTablaSeleccionada');
+    if (last && tablas.some(t => t.id === last)) {
+      sel.value = last;
+    } else if (tablas.length === 1) {
+      sel.value = tablas[0].id;
+  }
   // Previsualización
   const fileInput = document.getElementById("upload-file-input");
   fileInput?.addEventListener("change", ()=>{
@@ -358,7 +378,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   tbl.images = files.map(f => ({ name: f.name, url: URL.createObjectURL(f) }));
 
   // 5) Guardar local + remoto
-  saveTablas(tablas);
+  await saveTablas(tablas);
 
   // 6) Redirigir a resultados
   window.location.href = `results.html?tableId=${encodeURIComponent(selectedId)}`;
