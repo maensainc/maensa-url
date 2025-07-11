@@ -30,7 +30,6 @@ function getUserEmail() {
   catch { return null; }
 }
 
-// Devuelve la clave donde guardamos las tablas de ESTE usuario
 function getTablesKey() {
   const email = getUserEmail();
   return email
@@ -70,8 +69,9 @@ function getTablesKey() {
 function loadTablas() {
   return JSON.parse(localStorage.getItem(getTablesKey()) || '[]');
 }
-function saveTablas() {
-  localStorage.setItem(getTablesKey(), JSON.stringify(window.tablas));
+
+function saveTablas(tablas) {
+  localStorage.setItem(getTablesKey(), JSON.stringify(tablas));
 }
 
 
@@ -386,18 +386,28 @@ document.getElementById("table-select").addEventListener("change", renderPreview
 
 
 // — Procesar recibos: sube al backend y además guarda en la tabla local —
+// Procesar recibos: listener completo y modificado
 document.getElementById("btn-process").addEventListener("click", async () => {
+  // 1. Obtener archivos seleccionados
   const files = Array.from(document.getElementById("file-input").files);
-  if (!files.length) return alert("Selecciona archivos primero.");
+  if (!files.length) {
+    return alert("Selecciona archivos primero.");
+  }
 
-  const tbl = getTablaActiva();
-  if (!tbl) return alert("Selecciona una tabla de destino.");
+  // 2. Recargar todas las tablas y buscar la tabla activa
+  const tablas = loadTablas();
+  const activeId = document.getElementById("table-select").value;
+  const tbl = tablas.find(t => t.id === activeId);
+  if (!tbl) {
+    return alert("Selecciona una tabla de destino.");
+  }
 
+  // 3. Desactivar botón y mostrar estado
   const btn = document.getElementById("btn-process");
   btn.textContent = "Procesando…";
   btn.disabled    = true;
 
-  // — Subir al backend y parsear JSON
+  // 4. Subir archivos al backend y parsear la respuesta
   const form = new FormData();
   files.forEach(f => form.append("files", f));
   const user = JSON.parse(localStorage.getItem("usuario") || "{}");
@@ -416,24 +426,20 @@ document.getElementById("btn-process").addEventListener("click", async () => {
   const parsedData = await res.json();
   await updatePlanStatus();
 
+  // 5. Generar miniaturas en base64 (más estables que createObjectURL)
+  tbl.images = files.map(f => f.name);
 
-  // — Guardar miniaturas base64
-  tbl.images = [];
-  for (let f of files) {
-    const dataUrl = await new Promise(r => {
-      const fr = new FileReader();
-      fr.onload = () => r(fr.result);
-      fr.readAsDataURL(f);
-    });
-    tbl.images.push(dataUrl);
-  }
+  // 6. Concatenar datos parseados solo en la tabla activa
+  tbl.data = (tbl.data || []).concat(parsedData);
 
-tbl.data = (tbl.data || []).concat(parsedData);
-saveTablas();
+  // 7. Guardar todas las tablas actualizadas de vuelta en localStorage
+  saveTablas(tablas);
 
-const tableId = encodeURIComponent(tbl.id);
-window.location.href = `results.html?tableId=${tableId}`;
+  // 8. Redirigir a la página de resultados de la tabla activa
+  const tableId = encodeURIComponent(tbl.id);
+  window.location.href = `results.html?tableId=${tableId}`;
 });
+
 
 // upload.js
 
@@ -443,34 +449,25 @@ const previewContainer = document.getElementById("previews");
 const btnProcess     = document.getElementById("btn-process");
 
 // Al cambiar la selección de archivos:
+// Al cambiar la selección de archivos:
 fileInput.addEventListener("change", e => {
   const files = Array.from(e.target.files);
 
   // 1) Vaciar previews anteriores
   previewContainer.innerHTML = "";
 
-  // 2) Por cada archivo, crear un preview-item
+  // 2) Por cada archivo, crear un preview-item SOLO con el nombre
   files.forEach(file => {
     const div = document.createElement("div");
     div.className = "preview-item";
-
-    if (file.type.startsWith("image/")) {
-      // miniatura para imágenes
-      const img = document.createElement("img");
-      img.src = URL.createObjectURL(file);
-      img.onload = () => URL.revokeObjectURL(img.src);
-      div.appendChild(img);
-    } else {
-      // nombre de archivo para no-imágenes
-      div.textContent = file.name;
-    }
-
+    div.textContent = file.name;      // <- aquí ya NO se crea <img>
     previewContainer.appendChild(div);
   });
 
   // 3) Habilitar o deshabilitar el botón Procesar
   btnProcess.disabled = files.length === 0;
 });
+
 
 
 // ————————— Inicialización —————————
@@ -499,30 +496,28 @@ document.addEventListener('DOMContentLoaded', () => {
   bindAuthButtons();
 
   // 4) Mostrar sólo previews de los archivos que seleccionas:
-  const fileInput        = document.getElementById("file-input");
-  const previewContainer = document.getElementById("previews");
-  const btnProcess       = document.getElementById("btn-process");
+const fileInput        = document.getElementById("file-input");
+const previewContainer = document.getElementById("previews");
+const btnProcess       = document.getElementById("btn-process");
 
-  fileInput.addEventListener("change", e => {
-    const files = Array.from(e.target.files);
-    // Vaciar previews anteriores
-    previewContainer.innerHTML = "";
-    // Por cada archivo, miniatura o nombre
-    files.forEach(file => {
-      const div = document.createElement("div");
-      div.className = "preview-item";
-      if (file.type.startsWith("image/")) {
-        const img = document.createElement("img");
-        img.src = URL.createObjectURL(file);
-        img.onload = () => URL.revokeObjectURL(img.src);
-        div.appendChild(img);
-      } else {
-        div.textContent = file.name;
-      }
-      previewContainer.appendChild(div);
-    });
-    btnProcess.disabled = files.length === 0;
+// Al cambiar la selección de archivos:
+fileInput.addEventListener("change", e => {
+  const files = Array.from(e.target.files);
+
+  // 1) Vaciar previews anteriores
+  previewContainer.innerHTML = "";
+
+  // 2) Mostrar solo el nombre de cada archivo
+  files.forEach(file => {
+    const div = document.createElement("div");
+    div.className = "preview-item";
+    div.textContent = file.name;
+    previewContainer.appendChild(div);
   });
+
+  // 3) Habilitar o deshabilitar el botón Procesar
+  btnProcess.disabled = files.length === 0;
+});
 
 });
 

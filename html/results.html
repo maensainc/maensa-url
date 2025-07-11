@@ -95,7 +95,7 @@
   </header>
 
   <div class="page">
-    <!-- SIDEBAR DE TABLAS -->
+    <!-- SIDEBAR -->
     <aside class="sidebar">
       <h2>Mis Tablas</h2>
       <ul id="table-list"></ul>
@@ -105,12 +105,13 @@
     <!-- ÁREA PRINCIPAL -->
     <main class="content">
       <h1 id="table-title">—</h1>
-      <button id="btn-upload-images" class="btn-secondary" disabled>Subir imágenes</button>
-      <button id="btn-delete-table" class="btn-danger" disabled>Eliminar tabla</button>
-      <input type="file" id="file-input" accept="image/*" multiple style="display:none">
-      <div id="images-list" style="margin-top:1rem;"></div>
+      <!-- Estos controles se ocultarán en JS -->
+      <a href="upload.html"><button id="btn-upload-images" class="btn-secondary">Subir imágenes</button></a>
+      <button id="btn-delete-table" class="btn-danger">Eliminar tabla</button>
+      <input type="file" id="file-input" multiple style="display:none">
+      <div id="images-list"></div>
 
-      <!-- Aquí aparecerá la tabla de datos parseados -->
+      <!-- Aquí va la tabla de datos parseados -->
       <div id="data-table"></div>
     </main>
   </div>
@@ -119,10 +120,8 @@
     <p>© 2025 Maensa. Todos los derechos reservados.</p>
   </footer>
 
-  <!-- Scripts existentes -->
+  <!-- Scripts -->
   <script src="../js/planes.js"></script>
   <script src="../js/tables.js"></script>
-  <!-- Nuevo script para renderizar los datos parseados -->
-  <script src="../js/results.js"></script>
 </body>
 </html>
