@@ -481,20 +481,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (raw) loginExitoso(JSON.parse(raw));
   else updatePlanStatus();
 
-window.tablas = loadTablas();
-+opulateTableSelect();
+  window.tablas = loadTablas();
+  populateTableSelect(); 
+  const sel   = document.getElementById('table-select');
+  const urlId = new URLSearchParams(window.location.search).get('tableId');
 
-// —––––––— PRE-SELECCIÓN según query param —––––––—
-const urlId = new URLSearchParams(window.location.search).get('tableId');
-if (urlId) {
-  const sel = document.getElementById('table-select');
-  if ([…sel.options].some(o => o.value === urlId)) {
-    sel.value = urlId;
+  if (urlId) {
+    const options = Array.from(sel.options);
+    if (options.find(o => o.value === urlId)) {
+      sel.value = urlId;
+    }
   }
-}
-// Renderiza miniaturas de esa tabla (si quieres)
-renderPreviews();
-  // — NO llamamos renderPreviews() aquí —
+
+  renderPreviews();
 
   // 3) Botones de auth (login / registro)
   bindAuthButtons();

@@ -192,7 +192,7 @@ window.addEventListener('DOMContentLoaded', () => {
     IMG_LIST.style.display = 'none';
     BTN_UPLOAD.textContent = 'Subir imágenes';
     BTN_UPLOAD.onclick = () => {
-      window.location.href = `upload.html?tableId=${activeId}`;
+      window.location.href = `upload.html?tableId=${encodeURIComponent(activeId)}`;
     };
     // Finalmente renderizar tabla de datos parseados
     const tabla = tablas.find(t => t.id === activeId);
