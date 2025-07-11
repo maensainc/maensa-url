@@ -171,3 +171,7 @@ body {
   background: #388e3c;
   transform: translateY(-1px);
 }
+
+.menu-desplegable{
+  right: -20px;
+}

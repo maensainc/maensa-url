@@ -4,31 +4,35 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Subir archivos – Maensa</title>
+  <!-- Tu CSS global -->
   <link rel="stylesheet" href="../Maensa.css">
+  <!-- El CSS específico de esta página -->
   <link rel="stylesheet" href="../upload.css">
 </head>
 <body>
   <!-- HEADER / NAV -->
   <header class="header">
     <div class="logo">
-      <a href="Maensa.html"><img src="../fotos/logo.jpg" alt="Logo Maensa"></a>
+      <a href="Maensa.html">
+        <img src="../fotos/logo.jpg" alt="Logo Maensa">
+      </a>
     </div>
     <nav class="inicio_de_sesion">
       <ul>
-        <li><a href="#" id="btn-login" onclick="mostrarLogin(); return false;">Iniciar sesión</a></li>
-        <li><a href="#" id="btn-register" onclick="mostrarRegistro(); return false;">Registrarse</a></li>
+        <li><a href="#" id="btn-login">Iniciar sesión</a></li>
+        <li><a href="#" id="btn-register">Registrarse</a></li>
         <li class="menu-usuario hidden" id="menu-usuario-li">
-  <a href="#" id="btn-usuario">
-    <span class="nombre-usuario"></span>
-    <img src="../fotos/usuario.png" alt="Usuario" class="icono-usuario"/>
-  </a>
-<div class="menu-desplegable">
-  <a href="cuenta.html">Cuenta</a>
-  <a href="planel.html">Planes</a>
-  <a href="upload.html">Subir imágenes</a>
-  <a href="results.html">Mis tablas</a>
-  <a href="#" onclick="cerrarSesion(); return false;">Cerrar sesión</a>
-</div>
+          <a href="#" id="btn-usuario">
+            <span class="nombre-usuario"></span>
+            <img src="../fotos/usuario.png" alt="Usuario" class="icono-usuario">
+          </a>
+          <div class="menu-desplegable">
+            <a href="cuenta.html">Cuenta</a>
+            <a href="planel.html">Planes</a>
+            <a href="upload.html">Subir imágenes</a>
+            <a href="results.html">Mis tablas</a>
+            <a href="#" id="btn-cerrar-sesion">Cerrar sesión</a>
+          </div>
         </li>
       </ul>
     </nav>
@@ -59,6 +63,7 @@
           <span id="punto-2" class="punto"></span>
           <span id="punto-3" class="punto"></span>
         </div>
+
         <!-- Paso 1 -->
         <div id="registro-paso-1">
           <span class="close" onclick="cerrarModalRegistro()">&times;</span>
@@ -77,6 +82,7 @@
             <a href="#" onclick="mostrarLogin(); return false;">Iniciá sesión</a>
           </p>
         </div>
+
         <!-- Paso 2 -->
         <div id="registro-paso-2" class="hidden">
           <span class="close" onclick="cerrarModalRegistro()">&times;</span>
@@ -96,6 +102,7 @@
           <p class="reenvio-info">Podés reenviarlo cada 30 s.</p>
           <p><a href="#" onclick="volverAPaso1(); return false;">← Volver</a></p>
         </div>
+
         <!-- Paso 3 -->
         <div id="registro-paso-3" class="hidden">
           <span class="close" onclick="cerrarModalRegistro()">&times;</span>
@@ -111,7 +118,7 @@
   </section>
 
   <!-- MAIN UPLOAD -->
- <main class="main upload-container">
+  <main class="main upload-container">
     <h1>Subir archivos</h1>
 
     <div class="status-plan">
@@ -120,29 +127,29 @@
       <strong>Se restablecen en: <span id="countdown">--:--:--</span></strong>
     </div>
 
-    <!-- Selector de tabla -->
     <div class="table-selector">
       <label for="table-select"><strong>Tabla destino:</strong></label>
       <select id="table-select"></select>
     </div>
 
-<section id="upload-section">
-  <label class="dropzone">
-    <span class="dropzone-title">Arrastra archivos acá</span><br>
-    <span class="dropzone-subtitle">O haz click para elegir</span>
-    <input type="file" id="file-input" multiple accept="image/*,application/pdf" />
-  </label>
-  <div id="previews" class="preview-list"></div>
-  <button id="btn-process" type="button" disabled class="btn-primary">
-    Procesar recibos
-  </button>
-</section>
+    <section id="upload-section">
+      <label class="dropzone">
+        <span class="dropzone-title">Arrastra archivos acá</span>
+        <span class="dropzone-subtitle">O haz click para elegir</span>
+        <input type="file" id="upload-file-input" multiple accept="image/*,application/pdf" />
+      </label>
+      <div id="previews" class="preview-list"></div>
+      <button id="btn-process" type="button" disabled class="btn-primary">
+        Procesar recibos
+      </button>
+    </section>
   </main>
 
   <footer>
     <p>© 2025 Maensa. Todos los derechos reservados.</p>
   </footer>
 
+  <!-- Tu JS de upload -->
   <script src="../js/upload.js"></script>
 </body>
 </html>

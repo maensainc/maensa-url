@@ -7,66 +7,82 @@ const tableTitleEl = document.getElementById('table-title');
 const btnUploadImg = document.getElementById('btn-upload-images');
 const btnDelete    = document.getElementById('btn-delete-table');
 const imgListEl    = document.getElementById('images-list');
-const fileInput    = document.getElementById('file-input');
 const dataTableEl  = document.getElementById('data-table');
+const fileInput    = document.getElementById('file-input');
 
 const isResults = !!dataTableEl;
 
 let tablas   = [];
 let activeId = null;
 
-// — Helpers de usuario y claves —
+// — Helpers de usuario & keys —
 function getUserEmail() {
   const raw = localStorage.getItem('usuario');
   if (!raw) return null;
   try { return JSON.parse(raw).email; }
   catch { return null; }
 }
+
 function getTablesKey() {
   const email = getUserEmail();
   return email ? `misTablas_${email}` : 'misTablas_guest';
 }
 
-// — Persistencia remota —
+// — Persistencia remota con manejo de status錯误 —
 async function fetchTablasRemotas() {
   try {
     const res = await fetch(`${API_BASE}/api/tablas`, {
       headers: { "x-user-email": getUserEmail() }
     });
-    if (!res.ok) throw new Error();
+    if (!res.ok) {
+      console.error(`GET /api/tablas error: ${res.status} ${res.statusText}`);
+      const raw = localStorage.getItem(getTablesKey());
+      return raw ? JSON.parse(raw) : [];
+    }
     const data = await res.json();
     localStorage.setItem(getTablesKey(), JSON.stringify(data));
     return data;
-  } catch {
+  } catch (err) {
+    console.error('Network error fetching tablas:', err);
     const raw = localStorage.getItem(getTablesKey());
     return raw ? JSON.parse(raw) : [];
   }
 }
+
 async function syncTablasRemotas(arr) {
+  // 1) Verifica aquí
+  console.log('Tablas (como objeto):', arr);
+  console.log('Tablas (serializado a JSON):', JSON.stringify(arr));
+
   try {
-    await fetch(`${API_BASE}/api/tablas`, {
+    const res = await fetch(`${API_BASE}/api/tablas`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         "x-user-email": getUserEmail()
       },
-      body: JSON.stringify(arr)
+      body: JSON.stringify(arr)  // <— aquí debe ir el array de objetos
     });
-  } catch {
-    // no-op
+    if (!res.ok) {
+      console.error(`PUT /api/tablas error: ${res.status} ${res.statusText}`);
+    }
+  } catch (err) {
+    console.warn('Error de red sincronizando tablas:', err);
   }
 }
 
-// — Carga/guarda general —
+
+// — Persistencia local + remota —
 async function loadTablas() {
   tablas = await fetchTablasRemotas();
 }
+
 function saveTablas(arr) {
   localStorage.setItem(getTablesKey(), JSON.stringify(arr));
   syncTablasRemotas(arr);
 }
 
-// — Renderizado de sidebar —
+// — Render de la barra lateral —
 function renderSidebar() {
   tableListEl.innerHTML = '';
   tablas.forEach(tab => {
@@ -79,20 +95,17 @@ function renderSidebar() {
   });
 }
 
-// — Seleccionar tabla activa —
+// — Seleccionar tabla activa y actualizar URL —
 function selectTable(id) {
   activeId = id;
   renderSidebar();
-  if (isResults) {
-    renderDataTable(tablas.find(t => t.id === activeId)?.data);
-  } else {
-    renderActiveTable();
-  }
+  if (isResults) renderDataTable(tablas.find(t => t.id === activeId)?.data);
+  else           renderActiveTable();
   const param = isResults ? 'tableId' : 'id';
   window.history.replaceState(null, '', `?${param}=${encodeURIComponent(activeId)}`);
 }
 
-// — Crear nueva tabla —
+// — Crear y eliminar tablas —
 function createNewTable() {
   const name = prompt('Nombre de la nueva tabla:');
   if (!name) return;
@@ -102,7 +115,6 @@ function createNewTable() {
   selectTable(id);
 }
 
-// — Eliminar tabla activa —
 function deleteActiveTable() {
   if (!activeId) return;
   const tab = tablas.find(t => t.id === activeId);
@@ -111,8 +123,9 @@ function deleteActiveTable() {
   saveTablas(tablas);
   activeId = tablas[0]?.id || null;
   renderSidebar();
-  if (isResults) renderDataTable(tablas.find(t => t.id === activeId)?.data);
-  else renderActiveTable();
+  isResults
+    ? renderDataTable(tablas.find(t => t.id === activeId)?.data)
+    : renderActiveTable();
 }
 
 // — Render en tables.html: miniaturas —
@@ -128,16 +141,16 @@ function renderActiveTable() {
   tableTitleEl.textContent = tab.name;
   btnUploadImg.disabled    = false;
   btnDelete.disabled       = false;
-  imgListEl.innerHTML = '';
-  tab.images.forEach((src,i) => {
+  imgListEl.innerHTML      = '';
+  tab.images.forEach(src => {
     const img = document.createElement('img');
     img.src = src;
-    img.alt = `${tab.name} #${i+1}`;
+    img.alt = tab.name;
     imgListEl.appendChild(img);
   });
 }
 
-// — Manejo de archivos —
+// — Manejo de selección de archivos para preview —
 function handleFilesSelected(e) {
   const files = Array.from(e.target.files);
   const tab = tablas.find(t => t.id === activeId);
@@ -151,10 +164,10 @@ function handleFilesSelected(e) {
   fileInput.value = '';
 }
 
-// — Render en results.html: datos —
+// — Render en results.html: tabla de datos —
 function renderDataTable(data) {
   dataTableEl.innerHTML = '';
-  if (!data || !data.length) {
+  if (!data?.length) {
     dataTableEl.textContent = 'No hay datos para mostrar.';
     return;
   }
@@ -168,6 +181,7 @@ function renderDataTable(data) {
   });
   thead.appendChild(headRow);
   table.appendChild(thead);
+
   const tbody = document.createElement('tbody');
   data.forEach(row => {
     const tr = document.createElement('tr');
@@ -190,9 +204,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   activeId     = params.get(key) || tablas[0]?.id || null;
   renderSidebar();
   if (isResults) renderDataTable(tablas.find(t => t.id === activeId)?.data);
-  else renderActiveTable();
+  else           renderActiveTable();
+
   btnNewTable.addEventListener('click', createNewTable);
   btnDelete   .addEventListener('click', deleteActiveTable);
+
   if (!isResults) {
     btnUploadImg.addEventListener('click', () => fileInput.click());
     fileInput   .addEventListener('change', handleFilesSelected);
