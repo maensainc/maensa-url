@@ -35,16 +35,15 @@ async function fetchTablasRemotas() {
 
 async function syncTablasRemotas(arr) {
   try {
-    await fetch(`${API_BASE}/api/tablas`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "x-user-email": getUserEmail()
-      },
-      body: JSON.stringify(arr)
-    });
-  } catch {
-    // omitimos errores
+    const res = await fetch(`${API_BASE}/api/tablas`, { method: 'PUT', /*…*/ });
+    if (!res.ok) {
+      const err = await res.text();
+      console.error('PUT /api/tablas devolvió', res.status, err);
+      alert(`Error guardando tabla en el servidor: ${res.status}`);
+    }
+  } catch (err) {
+    console.error('Error de red sincronizando tablas:', err);
+    alert('No pude conectar con el servidor al guardar la tabla');
   }
 }
 
