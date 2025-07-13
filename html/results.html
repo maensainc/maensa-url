@@ -5,66 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mis Tablas – Maensa</title>
   <link rel="stylesheet" href="../result.css">
-  <style>
-    /* Gestión de layout: sidebar + main */
-    .page {
-      display: flex;
-      height: 100vh;
-      margin-top: 70px; /* si tienes header fijo */
-    }
-    aside.sidebar {
-      width: 240px;
-      background: #fafafa;
-      border-right: 1px solid #ddd;
-      padding: 1rem;
-      overflow-y: auto;
-    }
-    aside.sidebar ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    aside.sidebar li {
-      padding: .5rem;
-      cursor: pointer;
-    }
-    aside.sidebar li.active {
-      background: #e0f7fa;
-      font-weight: bold;
-    }
-    aside.sidebar button {
-      width: 100%;
-      margin-top: 1rem;
-    }
-    main.content {
-      flex: 1;
-      padding: 1rem;
-      overflow-y: auto;
-    }
-    #images-list img {
-      max-width: 150px;
-      margin: .5rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    /* Nuevo: estilos para la tabla de datos */
-    #data-table {
-      margin-top: 2rem;
-      overflow-x: auto;
-    }
-    #data-table table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    #data-table th, #data-table td {
-      border: 1px solid #ccc;
-      padding: 0.5rem;
-      text-align: left;
-    }
-    #data-table th {
-      background: #f5f5f5;
-    }
-  </style>
 </head>
 <body class="body-planes">
 
@@ -105,10 +45,14 @@
     <!-- ÁREA PRINCIPAL -->
     <main class="content">
       <h2 id="table-title">—</h2>
-      <!-- Estos controles se ocultarán en JS -->
-      <a href="upload.html"><button id="btn-upload-images" class="btn-secondary">Subir imágenes</button></a>
-      <button id="btn-delete-table" class="btn-danger">Eliminar tabla</button>
-      <button id="btn-edit-table" class="btn-secondary">Editar tabla</button>
+      <div class="btn-group">
+        <a href="upload.html"><button id="btn-upload-images" class="btn-secondary">Subir imágenes</button></a>
+        <button id="btn-delete-table" class="btn-danger">Eliminar tabla</button>
+        <button id="btn-edit-table" class="btn-secondary">Editar tabla</button>
+        <!-- Botón Exportar a Excel -->
+        <button id="btn-export-excel" class="btn-primary">Exportar a Excel</button>
+      </div>
+
       <input type="file" id="table-file-input" multiple style="display:none">
       <div id="images-list"></div>
 
@@ -124,8 +68,20 @@
     <p>© 2025 Maensa. Todos los derechos reservados.</p>
   </footer>
 
-  <!-- Scripts -->
+  <!-- SheetJS para exportar Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <!-- Scripts de la app -->
   <script src="../js/planes.js"></script>
   <script type="module" src="../js/tables.js"></script>
+  <script>
+    document.getElementById('btn-export-excel').addEventListener('click', () => {
+      const tabla = document.querySelector('#data-table table');
+      if (!tabla) {
+        return alert('No hay datos para exportar.');
+      }
+      const wb = XLSX.utils.table_to_book(tabla, { sheet: "Datos" });
+      XLSX.writeFile(wb, "tabla.xlsx");
+    });
+  </script>
 </body>
 </html>
