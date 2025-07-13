@@ -1,7 +1,5 @@
-// planes.js
 const API_BASE = "https://maensa.onrender.com";
 
-// Traduce cada plan a su límite diario de subidas
 function getLimitePorPlan(plan) {
   switch (plan) {
     case 'gratis':     return 20;
@@ -13,32 +11,23 @@ function getLimitePorPlan(plan) {
   }
 }
 
-// ——————————————
-// Funciones de Modal & Sesión
-// ——————————————
-function loginExitoso(usuario) {
-  // Oculta botones de login/registro
+async function loginExitoso(usuario) {
   document.getElementById("btn-login").style.display    = "none";
   document.getElementById("btn-register").style.display = "none";
 
-  // Muestra menú con nombre de usuario
   const menuLi = document.getElementById("menu-usuario-li");
   menuLi.classList.remove("hidden");
   menuLi.classList.remove("activo");
   document.querySelector(".nombre-usuario").textContent =
     `${usuario.nombre} ${usuario.apellido}`;
 
-  // Inicializa contador de subidas diario por usuario
-  const key = `uploadsUsed_${usuario.email}`;
-  const hoy = new Date().toISOString().split('T')[0];
-  let record = JSON.parse(localStorage.getItem(key)) || {};
-  if (record.date !== hoy) {
-    record = { date: hoy, count: 0 };
-    localStorage.setItem(key, JSON.stringify(record));
-  }
-
-  // Guarda objeto usuario
   localStorage.setItem("usuario", JSON.stringify(usuario));
+
+  const res = await fetch(`${API_BASE}/api/plan-status`, {
+    headers: { "x-user-email": usuario.email }
+  });
+  const status = await res.json();
+  localStorage.setItem("planStatus", JSON.stringify(status));
 }
 
 function cerrarModalLogin() {
@@ -57,9 +46,6 @@ function mostrarRegistro() {
   paso1();
 }
 
-// ——————————————
-// Helpers de registro
-// ——————————————
 let registroData = {};
 let resendCooldown = 0, resendTimer = null;
 
@@ -81,9 +67,6 @@ function paso2() {
   actualizarIndicador(2);
 }
 
-// ——————————————
-// Paso 1: envío de datos
-// ——————————————
 async function irAPaso2() {
   const nombre     = document.getElementById("nombre").value.trim();
   const apellido   = document.getElementById("apellido").value.trim();
@@ -118,9 +101,6 @@ async function irAPaso2() {
   }
 }
 
-// ——————————————
-// Reenviar código
-// ——————————————
 function iniciarCooldown() {
   resendCooldown = 30;
   updateResendButton();
@@ -154,9 +134,6 @@ function reenviarCodigo() {
     .catch(() => alert("Error de conexión al reenviar código."));
 }
 
-// ——————————————
-// Paso 2: verificar código
-// ——————————————
 async function verificarCodigo() {
   const codigo = document.getElementById("codigo-verificacion").value.trim();
   if (!codigo) return alert("Ingresá el código.");
@@ -183,9 +160,6 @@ async function verificarCodigo() {
   }
 }
 
-// ——————————————
-// Login
-// ——————————————
 async function iniciarSesion() {
   const email    = document.getElementById("email-login").value.trim();
   const password = document.getElementById("password-login").value.trim();
@@ -209,9 +183,6 @@ async function iniciarSesion() {
   }
 }
 
-// ——————————————
-// Menú usuario
-// ——————————————
 function toggleMenuUsuario() {
   const menuLi = document.getElementById("menu-usuario-li");
   menuLi.classList.toggle("activo");
@@ -221,9 +192,6 @@ function cerrarSesion() {
   location.href = "Maensa.html";
 }
 
-// ——————————————
-// Compra de planes
-// ——————————————
 function bindPlanes() {
   document.querySelectorAll(".plan-card .btn-contratar")
     .forEach(btn => btn.addEventListener("click", async e => {
@@ -231,40 +199,32 @@ function bindPlanes() {
       const plan = btn.closest(".plan-card")?.dataset.plan;
       if (!plan) return;
 
-if (plan === "gratis") {
-  const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
-  if (!usuario.email) {
-    return alert("No se encontró tu sesión. Por favor, inicia sesión de nuevo.");
-  }
-
-  try {
-    const res  = await fetch(`${API_BASE}/api/registro-plan`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: "gratis", email: usuario.email })
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      return alert(data.error || `Error ${res.status}: ${res.statusText}`);
-    }
-
-    // Backend devuelve ok=true y ya actualizó pago_confirmado=1 y bloqueó el email
-    alert("¡Plan Gratis activado y cuenta habilitada con éxito!");
-
-    // Actualizo el usuario en el cliente
-    usuario.plan = "gratis";
-    usuario.pago_confirmado = 1;
-    localStorage.setItem("usuario", JSON.stringify(usuario));
-    loginExitoso(usuario);
-
-  } catch (err) {
-    console.error("Error al activar plan gratis:", err);
-    alert("Error de conexión al activar el plan gratis.");
-  }
-  return;
-}
-
+      if (plan === "gratis") {
+        const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+        if (!usuario.email) {
+          return alert("No se encontró tu sesión. Por favor, inicia sesión de nuevo.");
+        }
+        try {
+          const res  = await fetch(`${API_BASE}/api/registro-plan`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plan: "gratis", email: usuario.email })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            return alert(data.error || `Error ${res.status}: ${res.statusText}`);
+          }
+          alert("¡Plan Gratis activado y cuenta habilitada con éxito!");
+          usuario.plan = "gratis";
+          usuario.pago_confirmado = 1;
+          localStorage.setItem("usuario", JSON.stringify(usuario));
+          loginExitoso(usuario);
+        } catch (err) {
+          console.error("Error al activar plan gratis:", err);
+          alert("Error de conexión al activar el plan gratis.");
+        }
+        return;
+      }
 
       try {
         const res  = await fetch(`${API_BASE}/api/registro-plan`, {
@@ -274,7 +234,6 @@ if (plan === "gratis") {
         });
         const data = await res.json();
         if (!res.ok) {
-          // Si el backend devolvió un error 4xx/5xx, lo mostramos
           console.error(`registro-plan error ${res.status}`, data);
           return alert(data.error || `Error ${res.status}: ${res.statusText}`);
         }
@@ -291,9 +250,6 @@ if (plan === "gratis") {
     }));
 }
 
-// ——————————————
-// Renderizado de resultados
-// ——————————————
 function renderResultsTable() {
   const table = document.getElementById("results-table");
   if (!table) return;
@@ -362,11 +318,7 @@ function renderResultsTable() {
   });
 }
 
-// ——————————————
-// Inicialización global
-// ——————————————
 document.addEventListener("DOMContentLoaded", () => {
-  // Sesión / menú
   const raw = localStorage.getItem("usuario");
   if (raw) loginExitoso(JSON.parse(raw));
 
@@ -385,31 +337,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Planes y resultados
   bindPlanes();
   renderResultsTable();
 
-  // Botón reenviar código (registro)
   updateResendButton();
   if (!raw) return;
   let usuario;
   try {
     usuario = JSON.parse(raw);
-  } catch (e) {
-    console.warn("No pude parsear usuario:", e);
+  } catch {
     return;
   }
   const planActivo = usuario.plan;
   if (!planActivo) return;
 
-  // 2. Busco la tarjeta que tenga data-plan igual al plan del usuario
   const tarjeta = document.querySelector(`.plan-card[data-plan="${planActivo}"]`);
   if (!tarjeta) return;
 
-  // 3. Le agrego una clase para estilos especiales
   tarjeta.classList.add("activo");
-
-  // 4. Cambio el texto del botón y lo deshabilito
   const btn = tarjeta.querySelector(".btn-contratar");
   if (btn) {
     btn.textContent = "Activo";
