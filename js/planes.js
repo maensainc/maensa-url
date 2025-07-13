@@ -28,18 +28,29 @@ async function loginExitoso(usuario) {
   });
   const status = await res.json();
   localStorage.setItem("planStatus", JSON.stringify(status));
+
+  const tarjeta = document.querySelector(`.plan-card[data-plan="${status.plan}"]`);
+  if (tarjeta) {
+    tarjeta.classList.add("activo");
+    const btn = tarjeta.querySelector(".btn-contratar");
+    btn.textContent = "Activo";
+    btn.disabled = true;
+  }
 }
 
 function cerrarModalLogin() {
   document.getElementById("modal-login").classList.add("hidden");
 }
+
 function mostrarLogin() {
   cerrarModalRegistro();
   document.getElementById("modal-login").classList.remove("hidden");
 }
+
 function cerrarModalRegistro() {
   document.getElementById("modal-register").classList.add("hidden");
 }
+
 function mostrarRegistro() {
   cerrarModalLogin();
   document.getElementById("modal-register").classList.remove("hidden");
