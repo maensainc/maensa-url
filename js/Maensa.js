@@ -175,8 +175,6 @@ async function verificarCodigo() {
     }
 
     cerrarModalRegistro();
-    registroData.plan = "basico";
-    registroData.pago_confirmado = 0;
     registroData.verificado = true;
     localStorage.setItem("usuario", JSON.stringify(registroData));
     window.location.href = "planel.html";

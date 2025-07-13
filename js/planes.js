@@ -12,30 +12,27 @@ function getLimitePorPlan(plan) {
 }
 
 async function loginExitoso(usuario) {
+  // Oculta los botones de login/registro
   document.getElementById("btn-login").style.display    = "none";
   document.getElementById("btn-register").style.display = "none";
 
+  // Muestra el menú de usuario con su nombre
   const menuLi = document.getElementById("menu-usuario-li");
   menuLi.classList.remove("hidden");
   menuLi.classList.remove("activo");
   document.querySelector(".nombre-usuario").textContent =
     `${usuario.nombre} ${usuario.apellido}`;
 
+  // Guarda el usuario en localStorage
   localStorage.setItem("usuario", JSON.stringify(usuario));
 
+  // Trae el estado actual del plan (para mostrar datos como "remaining", no para activar nada)
   const res = await fetch(`${API_BASE}/api/plan-status`, {
     headers: { "x-user-email": usuario.email }
   });
   const status = await res.json();
   localStorage.setItem("planStatus", JSON.stringify(status));
 
-  const tarjeta = document.querySelector(`.plan-card[data-plan="${status.plan}"]`);
-  if (tarjeta) {
-    tarjeta.classList.add("activo");
-    const btn = tarjeta.querySelector(".btn-contratar");
-    btn.textContent = "Activo";
-    btn.disabled = true;
-  }
 }
 
 function cerrarModalLogin() {
@@ -161,8 +158,6 @@ async function verificarCodigo() {
     }
 
     cerrarModalRegistro();
-    registroData.plan            = "basico";
-    registroData.pago_confirmado = 0;
     registroData.verificado      = true;
     localStorage.setItem("usuario", JSON.stringify(registroData));
     window.location.href = "planel.html";
